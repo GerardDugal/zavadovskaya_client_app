@@ -14,17 +14,39 @@ class CourseDetailBloc extends Bloc<CourseDetailEvent, CourseDetailState> {
   CourseDetailBloc({required this.courseRepository})
       : super(CourseDetailInitial()) {
     on<GetCourseDetailRequested>(_onGetCourseDetailRequested);
+    on<CheckPaymentStatus>(_onCheckPaymentStatus);
   }
 
-  Future<void> _onGetCourseDetailRequested(
-      GetCourseDetailRequested event, Emitter<CourseDetailState> emit) async {
-    emit(CourseDetailLoading());
+ Future<void> _onGetCourseDetailRequested(
+  GetCourseDetailRequested event,
+  Emitter<CourseDetailState> emit,
+) async {
+  emit(CourseDetailLoading());
+  try {
+    final course = await courseRepository.getCourseByID(event.courseID);
+    final video = await courseRepository.getVideosByCourseId(event.courseID);
+
+    final isPaid = await courseRepository.checkCoursePayment(event.courseID);
+    final updatedCourse = course.copyWith(isPaid: isPaid); // <-- обновлённое поле
+
+    emit(CourseDetailLoaded(course: updatedCourse, videos: video));
+  } catch (error) {
+    emit(CourseDetailError(error: error.toString()));
+  }
+}
+
+
+  Future<void> _onCheckPaymentStatus(
+    CheckPaymentStatus event,
+    Emitter<CourseDetailState> emit,
+  ) async {
+    emit(PaymentChecking());
+    
     try {
-      final course = await courseRepository.getCourseByID(event.courseID);
-      final video = await courseRepository.getVideosByCourseId(event.courseID);
-      emit(CourseDetailLoaded(course: course, videos: video));
-    } catch (error) {
-      emit(CourseDetailError(error: error.toString()));
+      final isPaid = await courseRepository.checkCoursePayment(event.courseId);
+      emit(PaymentChecked(isPaid));
+    } catch (e) {
+      emit(PaymentError('Ошибка при проверке статуса оплаты'));
     }
   }
 

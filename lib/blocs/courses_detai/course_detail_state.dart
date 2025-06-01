@@ -42,3 +42,19 @@ class VideosLoaded extends CourseDetailState {
   @override
   List<Object> get props => [videos];
 }
+
+class PaymentInitial extends CourseDetailState {}
+
+class PaymentChecking extends CourseDetailState {}
+
+class PaymentChecked extends CourseDetailState {
+  final bool isPaid;
+
+  PaymentChecked(this.isPaid);
+}
+
+class PaymentError extends CourseDetailState {
+  final String message;
+
+  PaymentError(this.message);
+}
