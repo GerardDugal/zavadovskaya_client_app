@@ -376,15 +376,15 @@ class VideoCard extends StatelessWidget {
   }
 
   void _openVideoPlayer(BuildContext context) {
-    Navigator.of(context).pop();
-                Navigator.push(
-                 context,
-                 MaterialPageRoute(
-                  builder: (context) => VideoPlayerScreen(
-                    videoId: video.id,
-                    videoTitle: video.name,
-                  ),
-                ),
-               );
-  }
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => VideoPlayerScreen(
+        videoId: video.id,
+        videoTitle: video.name,
+      ),
+    ),
+  );
+}
+
 }

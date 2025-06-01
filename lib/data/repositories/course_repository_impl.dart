@@ -15,6 +15,7 @@ import '../../config.dart';
 class CourseRepositoryImpl implements CourseRepository {
   final String baseUrl;
   final FlutterSecureStorage secureStorage;
+  
 
   CourseRepositoryImpl(
       {required this.baseUrl, FlutterSecureStorage? secureStorage})
@@ -249,16 +250,18 @@ Future<List<Video>> getVideosByCourseId(int courseId) async {
 Future<VideoPlayerController> getVideoStream(int videoId) async {
   print('🔍 [VideoRepository] Получение видео потока для ID: $videoId');
   final headers = await _getHeaders();
+  headers['Range'] = 'bytes=0-';
   final uri = Uri.parse('https://zavadovskayakurs.ru/api/v1/stream/stream/by_id/$videoId');
   
   print('📡 Отправка GET запроса на $uri с заголовками: $headers');
 
   try {
     // Создаем контроллер для потокового видео
-    final controller = VideoPlayerController.network(
-      uri.toString(),
-      httpHeaders: headers,
-    );
+    final controller = VideoPlayerController.networkUrl(
+  uri,
+  httpHeaders: headers,
+  videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true), // <- важно для Android
+);
 
     // Инициализируем контроллер
     await controller.initialize();
