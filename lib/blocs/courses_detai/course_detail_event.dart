@@ -28,3 +28,9 @@ class GetVideosByCourseId extends CourseDetailEvent {
   @override
   List<Object> get props => [courseId];
 }
+
+class CheckPaymentStatus extends CourseDetailEvent {
+  final int courseId;
+
+  CheckPaymentStatus(this.courseId);
+}

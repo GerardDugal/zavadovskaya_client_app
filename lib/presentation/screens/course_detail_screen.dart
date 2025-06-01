@@ -189,7 +189,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       ),
                     ),
                   ),
-
                   // Видео карточки
                   ListView.builder(
                     physics: const NeverScrollableScrollPhysics(),
@@ -199,14 +198,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                       final video = videos[index];
                       return VideoCard(
                         video: video,
-                        isCoursePaid: true,
+                        isCoursePaid: course.isPaid,
                         coursePrice: course.cost,
                         courseId: course.id,
                         video_id: video.id,
                       );
                     },
                   ),
-
                   const SizedBox(height: 80),
                 ],
               ),
@@ -362,17 +360,12 @@ class VideoCard extends StatelessWidget {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.purple),
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.push(
-                 context,
-                 MaterialPageRoute(
-                  builder: (context) => VideoPlayerScreen(
-                    videoId: video.id,
-                    videoTitle: video.name,
-                  ),
-                ),
-               );
+              onPressed: () {Navigator.of(context).pop();
+                Navigator.pushNamed(
+                  context,
+                  '/payment',
+                  arguments: {'courseID': courseId, 'price': coursePrice},
+                );
               },
               child: const Text('Оплатить'),
             ),
