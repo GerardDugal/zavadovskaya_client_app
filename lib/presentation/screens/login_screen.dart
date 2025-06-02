@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -9,50 +10,83 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController emailController = TextEditingController(text: '');
-  final TextEditingController passwordController =
-      TextEditingController(text: '');
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
+  final nameController = TextEditingController();
+  final phoneController = TextEditingController();
+
+  final phoneMask = MaskTextInputFormatter(
+    mask: '+7 (###) ###-##-##',
+    filter: {"#": RegExp(r'[0-9]')},
+  );
+
   bool isLogin = true;
   bool isPasswordVisible = false;
   bool isConfirmPasswordVisible = false;
 
-  // Маска для номера телефона
-  final phoneMask = MaskTextInputFormatter(
-    mask: '+7 (###) ###-##-##',
-    filter: {"#": RegExp(r'[0-9]')},
-    type: MaskAutoCompletionType.eager,
-  );
-
-  void _onAuthButtonPressed() {
-    if (_formKey.currentState!.validate()) {
-      String rawPhone = phoneMask.getUnmaskedText(); // Чистый номер телефона
-      String formattedPhone =
-          rawPhone.replaceFirst('7', '7'); // Заменяем +7 на 7
-
+  void _onSubmit() {
+    if (_formKey.currentState?.validate() ?? false) {
       if (isLogin) {
-        BlocProvider.of<AuthBloc>(context).add(LoginRequested(
-          email: emailController.text.trim(),
-          password: passwordController.text.trim(),
-        ));
+        context.read<AuthBloc>().add(LoginRequested(
+              email: emailController.text.trim(),
+              password: passwordController.text.trim(),
+            ));
       } else {
-        BlocProvider.of<AuthBloc>(context).add(RegistrationRequested(
-          name: nameController.text.trim(),
-          phone: formattedPhone,
-          email: emailController.text.trim(),
-          password: passwordController.text.trim(),
-        ));
+        context.read<AuthBloc>().add(RegistrationRequested(
+              name: nameController.text.trim(),
+              phone: phoneController.text.trim(),
+              email: emailController.text.trim(),
+              password: passwordController.text.trim(),
+            ));
       }
     }
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+    bool obscure = false,
+    bool isPasswordToggle = false,
+    void Function()? toggleVisibility,
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      obscureText: obscure,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      style: TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: Colors.grey[400]),
+        filled: true,
+        fillColor: Colors.grey[800],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+        suffixIcon: isPasswordToggle
+            ? IconButton(
+                icon: Icon(
+                  obscure ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.grey[400],
+                ),
+                onPressed: toggleVisibility,
+              )
+            : null,
+      ),
+      validator: validator,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
@@ -62,246 +96,143 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         centerTitle: true,
       ),
-      body: BlocListener<AuthBloc, AuthState>(
+      body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          if (state is AuthAuthenticated) {
-            // Перейти на домашний экран
-            Navigator.pushReplacementNamed(context, '/home');
-          } else if (state is AuthFailure) {
-            // Отобразить сообщение об ошибке
-            showDialog(
-              context: context,
-              builder: (context) {
-                return AlertDialog(
-                  title: Text('Ошибка входа'),
-                  content:
-                      Text('Не удалось войти. Проверьте введенные данные.'),
+          if (state is AuthFailure && state.error.isNotEmpty) {
+            // Вызов через microtask, чтобы не вызвать showDialog во время build
+            Future.microtask(() {
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (_) => AlertDialog(
+                  title: Text('Ошибка'),
+                  content: Text(state.error),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.of(context).pop(),
                       child: Text('ОК'),
                     ),
                   ],
-                );
-              },
-            );
+                ),
+              );
+            });
           }
         },
-        child: Container(
-          height: double.infinity,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.black, Colors.grey[900]!],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
+        builder: (context, state) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
             child: SingleChildScrollView(
               child: Form(
                 key: _formKey,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
                       isLogin ? 'Добро пожаловать!' : 'Создайте аккаунт',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 24),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     if (!isLogin) ...[
-                      TextFormField(
+                      _buildTextField(
                         controller: nameController,
-                        decoration: InputDecoration(
-                          hintText: 'Имя',
-                          filled: true,
-                          fillColor: Colors.grey[800],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          hintStyle: TextStyle(color: Colors.grey[400]),
-                        ),
-                        style: TextStyle(color: Colors.white),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Введите имя';
-                          }
-                          return null;
-                        },
+                        hint: 'Имя',
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Введите имя' : null,
                       ),
-                      SizedBox(height: 10),
-                      TextFormField(
+                      const SizedBox(height: 10),
+                      _buildTextField(
                         controller: phoneController,
-                        decoration: InputDecoration(
-                          hintText: 'Телефон',
-                          filled: true,
-                          fillColor: Colors.grey[800],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          hintStyle: TextStyle(color: Colors.grey[400]),
-                        ),
+                        hint: 'Телефон',
                         keyboardType: TextInputType.phone,
-                        style: TextStyle(color: Colors.white),
                         inputFormatters: [phoneMask],
-                        validator: (value) {
-                          // Чистый номер без маски
-                          String rawPhone = "7${phoneMask.getUnmaskedText()}";
-                          pragma('rawPhone: $rawPhone');
-                          // Проверяем, чтобы номер состоял из 11 цифр и начинался с "7"
-                          if (rawPhone.isEmpty) {
-                            return 'Введите номер телефона';
-                          }
-                          if (!RegExp(r'^7\d{10}$').hasMatch(rawPhone)) {
-                            return 'Введите корректный номер телефона';
+                        validator: (_) {
+                          final phone = phoneMask.getUnmaskedText();
+                          if (phone.isEmpty || phone.length != 11) {
+                            return 'Введите корректный номер';
                           }
                           return null;
                         },
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                     ],
-                    TextFormField(
+                    _buildTextField(
                       controller: emailController,
-                      decoration: InputDecoration(
-                        hintText: 'Email',
-                        filled: true,
-                        fillColor: Colors.grey[800],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                      ),
+                      hint: 'Email',
                       keyboardType: TextInputType.emailAddress,
-                      style: TextStyle(color: Colors.white),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите email';
-                        }
-                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                          return 'Введите корректный email';
-                        }
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Введите email';
+                        final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                        return !regex.hasMatch(v) ? 'Неверный email' : null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    _buildTextField(
+                      controller: passwordController,
+                      hint: 'Пароль',
+                      obscure: !isPasswordVisible,
+                      isPasswordToggle: true,
+                      toggleVisibility: () => setState(() {
+                        isPasswordVisible = !isPasswordVisible;
+                      }),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Введите пароль';
+                        if (v.length < 6) return 'Минимум 6 символов';
                         return null;
                       },
                     ),
-                    SizedBox(height: 10),
-                    TextFormField(
-                      controller: passwordController,
-                      decoration: InputDecoration(
-                        hintText: 'Пароль',
-                        filled: true,
-                        fillColor: Colors.grey[800],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            isPasswordVisible
-                                ? Icons.visibility
-                                : Icons.visibility_off,
-                            color: Colors.grey[400],
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              isPasswordVisible = !isPasswordVisible;
-                            });
+                    if (!isLogin)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10),
+                        child: _buildTextField(
+                          controller: confirmPasswordController,
+                          hint: 'Подтвердите пароль',
+                          obscure: !isConfirmPasswordVisible,
+                          isPasswordToggle: true,
+                          toggleVisibility: () => setState(() {
+                            isConfirmPasswordVisible = !isConfirmPasswordVisible;
+                          }),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return 'Повторите пароль';
+                            }
+                            if (v != passwordController.text) {
+                              return 'Пароли не совпадают';
+                            }
+                            return null;
                           },
                         ),
                       ),
-                      obscureText: !isPasswordVisible,
-                      style: TextStyle(color: Colors.white),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Введите пароль';
-                        }
-                        if (value.length < 6) {
-                          return 'Пароль должен содержать не менее 6 символов';
-                        }
-                        return null;
-                      },
-                    ),
-                    if (!isLogin) ...[
-                      SizedBox(height: 10),
-                      TextFormField(
-                        controller: confirmPasswordController,
-                        decoration: InputDecoration(
-                          hintText: 'Подтвердите пароль',
-                          filled: true,
-                          fillColor: Colors.grey[800],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          hintStyle: TextStyle(color: Colors.grey[400]),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              isConfirmPasswordVisible
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                              color: Colors.grey[400],
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                isConfirmPasswordVisible =
-                                    !isConfirmPasswordVisible;
-                              });
-                            },
-                          ),
-                        ),
-                        obscureText: !isConfirmPasswordVisible,
-                        style: TextStyle(color: Colors.white),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Повторите пароль';
-                          }
-                          if (value != passwordController.text) {
-                            return 'Пароли не совпадают';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                    SizedBox(height: 20),
-                    Container(
+                    const SizedBox(height: 20),
+                    SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _onAuthButtonPressed,
+                        onPressed:
+                            state is AuthLoading ? null : () => _onSubmit(),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.purple,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 12),
                         ),
-                        child: Text(
-                          isLogin ? 'Войти' : 'Зарегистрироваться',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: state is AuthLoading
+                            ? CircularProgressIndicator(
+                                color: Colors.white,
+                              )
+                            : Text(
+                                isLogin ? 'Войти' : 'Зарегистрироваться',
+                                style: TextStyle(color: Colors.white),
+                              ),
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
-                        setState(() {
-                          isLogin = !isLogin;
-                          confirmPasswordController.clear();
-                        });
-                      },
+                      onPressed: () => setState(() {
+                        isLogin = !isLogin;
+                        confirmPasswordController.clear();
+                      }),
                       child: Text(
                         isLogin
                             ? 'Нет аккаунта? Зарегистрируйтесь'
-                            : 'Уже есть аккаунт? Войдите',
+                            : 'Уже есть аккаунт? Войти',
                         style: TextStyle(color: Colors.grey[400]),
                       ),
                     ),
@@ -309,8 +240,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

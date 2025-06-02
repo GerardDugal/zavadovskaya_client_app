@@ -11,6 +11,10 @@ part 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository authRepository;
 
+  // Сохраняем последние данные логина для повторной попытки
+  String? _lastEmail;
+  String? _lastPassword;
+
   AuthBloc({required this.authRepository}) : super(AuthInitial()) {
     on<AppStarted>(_onAppStarted);
     on<LoginRequested>(_onLoginRequested);
@@ -18,6 +22,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutRequested>(_onLogoutRequested);
     on<SendSmsCode>(_onSendSmsCode);
     // on<SubmitSmsCode>(_onSubmitSmsCode);
+    on<RetryLoginRequested>(_onRetryLoginRequested);
   }
 
   Future<void> _onAppStarted(AppStarted event, Emitter<AuthState> emit) async {
@@ -34,11 +39,41 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthUnauthenticated());
     }
   }
+Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
+  print('AuthBloc: _onLoginRequested, email: ${event.email}');
+  emit(AuthLoading());
+  print('AuthBloc: состояние AuthLoading эмитировано');
 
-  Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
+  _lastEmail = event.email;
+  _lastPassword = event.password;
+
+  try {
+    final result = await authRepository.login(event.email, event.password);
+    print('AuthBloc: login успешно, результат: $result');
+
+    final user = await authRepository.getCurrentUser();
+    print('AuthBloc: пользователь получен: $user');
+
+    emit(AuthAuthenticated(user: user));
+    print('AuthBloc: состояние AuthAuthenticated эмитировано');
+  } catch (e) {
+    print('AuthBloc: ошибка при логине: $e');
+    emit(AuthFailure(error: e.toString()));
+    print('AuthBloc: состояние AuthFailure эмитировано');
+  }
+}
+
+
+  Future<void> _onRetryLoginRequested(RetryLoginRequested event, Emitter<AuthState> emit) async {
+    if (_lastEmail == null || _lastPassword == null) {
+      emit(AuthFailure(error: "Повторный вход невозможен: отсутствуют данные."));
+      return;
+    }
+
     emit(AuthLoading());
+
     try {
-      await authRepository.login(event.email, event.password);
+      await authRepository.login(_lastEmail!, _lastPassword!);
       final user = await authRepository.getCurrentUser();
       emit(AuthAuthenticated(user: user));
     } catch (e) {
@@ -66,19 +101,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthFailure(error: e.toString()));
     }
   }
-  
-}
-
 
   Future<void> _onSendSmsCode(SendSmsCode event, Emitter<AuthState> emit) async {
-  emit(AuthLoading());
-  await Future.delayed(Duration(seconds: 1)); // Заглушка для отправки SMS
-  emit(SmsCodeSent()); // Отправляем состояние, что код выслан
+    emit(AuthLoading());
+    await Future.delayed(Duration(seconds: 1)); // Заглушка
+    emit(SmsCodeSent());
+  }
+
+  // Добавьте этот метод при необходимости:
+  // Future<void> _onSubmitSmsCode(...) async { ... }
 }
-
-// Future<void> _onSubmitSmsCode(SubmitSmsCode event, Emitter<AuthState> emit) async {
-//   emit(AuthLoading());
-//   await Future.delayed(Duration(seconds: 1)); // Эмуляция обработки кода
-//   emit(AuthAuthenticated(user: User(id: '123', email: "test@mail", name: "test", phone: '', login: '', avatar: '', purchasedCourseIds: []))); // Заглушка
-// }
-

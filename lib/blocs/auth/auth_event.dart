@@ -21,6 +21,8 @@ class LoginRequested extends AuthEvent {
   List<Object?> get props => [email, password];
 }
 
+class RetryLoginRequested extends AuthEvent {}
+
 class RegistrationRequested extends AuthEvent {
   final String name;
   final String phone;

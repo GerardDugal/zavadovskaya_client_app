@@ -43,54 +43,67 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> login(String email, String password) async {
-    print('🔑 [AuthRepository] Начало запроса логина');
-    print('📧 Email: $email');
-    // 🔒 Password: $password // **Важно:** В продакшене не рекомендуется логировать пароли
+Future<Map<String, dynamic>> login(String email, String password) async {
+  print('🔑 [AuthRepository] Начало запроса логина');
+  print('📧 Email: $email');
+  // 🔒 Password: $password // **Важно:** В продакшене не рекомендуется логировать пароли
 
-    try {
-      final uri = Uri.parse('$baseUrl/auth/login');
-      print('📡 Отправка POST запроса на $uri');
+  try {
+    final uri = Uri.parse('$baseUrl/auth/login');
+    print('📡 Отправка POST запроса на $uri');
 
-      final response = await http
-          .post(
-            uri,
-            headers: {'Content-Type': 'application/json', 'accept': 'application/json'},
-            body: json.encode({'login': email, 'password': password}),
-          )
-          .timeout(Duration(seconds: 10)); // Добавлен таймаут 10 секунд
+    final response = await http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json',
+          },
+          body: json.encode({'login': email, 'password': password}),
+        )
+        .timeout(const Duration(seconds: 10));
 
-      print('📬 Получен ответ с кодом: ${response.statusCode}');
-      print('📄 Тело ответа: ${response.body}');
+    print('📬 Получен ответ с кодом: ${response.statusCode}');
+    print('📄 Тело ответа: ${response.body}');
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final token = data['token']; // Получаем токен из ответа
-        await secureStorage.write(key: 'access_token', value: token);
-        print('✅ Логин успешен. Токен сохранен.');
-
-        // Декодирование токена для получения информации о пользователе
-        Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-        print('👤 Декодированный токен: $decodedToken');
-
-        // Получение списка купленных курсов (если есть, иначе пустой)
-        List<int> purchasedCourses = await _getPurchasedCourses();
-
-        return {
-          ...decodedToken,
-          'purchasedCourseIds': purchasedCourses,
-        };
-      } else {
-        final error = json.decode(response.body)['message'] ?? 'Ошибка входа';
-        print('❌ Ошибка логина: $error');
-        throw Exception(error);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final token = data['token'];
+      if (token == null || token is! String) {
+        throw Exception('Ошибка: токен не найден в ответе сервера.');
       }
-    } catch (e) {
-      print('🚨 Исключение при выполнении логина: $e');
-      throw Exception(
-          'Не удалось выполнить логин. Проверьте подключение к интернету и правильность введённых данных.');
+      await secureStorage.write(key: 'access_token', value: token);
+      print('✅ Логин успешен. Токен сохранен.');
+
+      Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
+      print('👤 Декодированный токен: $decodedToken');
+
+      List<int> purchasedCourses = await _getPurchasedCourses();
+
+      return {
+        ...decodedToken,
+        'purchasedCourseIds': purchasedCourses,
+      };
+    } else {
+      String error = 'Ошибка входа';
+      try {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic> && data.containsKey('message')) {
+          error = data['message'];
+        }
+      } catch (_) {
+        // Игнорируем ошибку парсинга, оставляем стандартное сообщение
+      }
+      print('❌ Ошибка логина: $error');
+      throw Exception(error);
     }
+  } catch (e) {
+    print('🚨 Исключение при выполнении логина: $e');
+    throw Exception(
+        'Не удалось выполнить логин. Проверьте подключение к интернету и правильность введённых данных.');
   }
+}
+
 
   @override
   Future<Map<String, dynamic>> registration(
