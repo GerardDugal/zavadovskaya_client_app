@@ -55,3 +55,12 @@ class VerifySmsCodeFailure extends VerifySmsCodeState {
 
 // Добавляем состояние отправки SMS
 class SmsCodeSent extends AuthState {}
+
+// class RecoveryPassword extends AuthState {
+//   final bool recovery;
+
+//   const RecoveryPassword({required this.recovery});
+
+//   @override
+//   List<Object?> get props => [recovery];
+// }

@@ -64,3 +64,12 @@ class SubmitSmsCode extends AuthEvent {
   @override
   List<Object?> get props => [phoneNumber, code];
 }
+
+// class PasswordRecovery extends AuthEvent {
+//   final String login;
+
+//   const PasswordRecovery({required this.login});
+
+//   @override
+//   List<Object?> get props => [login];
+// }

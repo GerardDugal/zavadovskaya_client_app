@@ -9,6 +9,7 @@ abstract class AuthRepository {
   Future<User> getCurrentUser();
   Future<bool> isLoggedIn();
   Future<void> refreshToken();
+  Future<bool> passwordRecovery(String login);
 
   removePurchasedCourse(int courseID) {}
 }

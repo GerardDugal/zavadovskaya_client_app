@@ -3,6 +3,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:zavadovskaya_client_app/config.dart';
+import 'package:zavadovskaya_client_app/presentation/screens/passwordRecovery_screen.dart';
 import '../../data/models/user.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -24,6 +25,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<SendSmsCode>(_onSendSmsCode);
     // on<SubmitSmsCode>(_onSubmitSmsCode);
     on<RetryLoginRequested>(_onRetryLoginRequested);
+    // on<PasswordRecovery>(_passwordRecovery);
   }
 
   Future<void> _onAppStarted(AppStarted event, Emitter<AuthState> emit) async {
@@ -108,6 +110,17 @@ Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) as
     await Future.delayed(Duration(seconds: 1)); // Заглушка
     emit(SmsCodeSent());
   }
+
+// Future<void> _passwordRecovery(PasswordRecovery event, Emitter<AuthState> emit) async {
+//   try {
+//     final recovery = await authRepository.passwordRecovery(event.login);
+//     emit(RecoveryPassword(recovery: recovery));
+//     Config.mprint('AuthBloc: восстановление успешно, результат: $recovery');
+//   } catch (e) {
+//     Config.mprint('AuthBloc: ошибка при восстановлении: $e');
+//     emit(const RecoveryPassword(recovery: false)); // 👈 добавь это
+//   }
+// }
 
   // Добавьте этот метод при необходимости:
   // Future<void> _onSubmitSmsCode(...) async { ... }

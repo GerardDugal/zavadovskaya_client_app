@@ -244,6 +244,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(color: Colors.grey[400]),
                       ),
                     ),
+                    TextButton(
+                      onPressed: () async {
+                        final result = await Navigator.pushNamed(context, '/passwordRecovery');
+                    
+                        if (result == true) {
+                          // Показываем сообщение только при успешном восстановлении
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Инструкция отправлена на почту')),
+                          );
+                        }
+                      },
+                      child: Text(
+                        'Забыли пароль? Восстановить.',
+                        style: TextStyle(color: Colors.grey[400]),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -254,3 +270,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+

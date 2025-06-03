@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zavadovskaya_client_app/blocs/courses_detai/course_detail_bloc.dart';
+import 'package:zavadovskaya_client_app/blocs/password_recovery/password_recovery_bloc.dart';
+import 'package:zavadovskaya_client_app/presentation/screens/passwordRecovery_screen.dart';
 import 'blocs/auth/auth_bloc.dart';
 import 'blocs/courses/courses_bloc.dart';
 import 'blocs/profile/profile_bloc.dart';
@@ -71,6 +73,10 @@ class MyApp extends StatelessWidget {
               paymentRepository: context.read<PaymentRepository>(),
               authRepository: context.read<AuthRepository>(),
             ),
+          ),
+          BlocProvider<PasswordRecoveryBloc>(
+            create: (context) =>
+                PasswordRecoveryBloc(authRepository: context.read<AuthRepository>()),
           ),
         ],
         child: MaterialApp(
@@ -174,7 +180,12 @@ class MyApp extends StatelessWidget {
       // Пример добавления экрана создания курса
       // case '/createCourse':
       //   return MaterialPageRoute(builder: (_) => CreateCourseScreen());
-
+      case '/passwordRecovery':
+        return MaterialPageRoute(
+          builder: (context) {
+              return PasswordRecoveryScreen();
+          },
+        );
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

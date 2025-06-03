@@ -340,7 +340,55 @@ Future<Map<String, dynamic>> login(String login, String password) async {
       throw Exception('Не удалось удалить купленный курс.');
     }
   }
+
+   @override
+Future<bool> passwordRecovery(String login) async {
+  Config.mprint('📧 Login: $login');
+  try {
+    final uri = Uri.parse('$baseUrl/auth/recovery');
+    Config.mprint('📡 Отправка POST запроса на $uri');
+
+    final response = await http
+        .post(
+          uri,
+          headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json',
+          },
+          body: json.encode({'login': login}),
+        )
+        .timeout(const Duration(seconds: 10));
+
+    Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+    Config.mprint('📄 Тело ответа: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+
+      final bool success = data["success"];
+
+      return success;
+    } else {
+      String error = 'Ошибка восстановления пароля, проверьте правильность введенных данных. Код ошибки: ';
+      try {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic> && data.containsKey('message')) {
+          error = data['message'];
+        }
+      } catch (_) {
+        // Игнорируем ошибку парсинга, оставляем стандартное сообщение
+      }
+      Config.mprint('❌ Ошибка восстановления: $error');
+      throw Exception(error);
+    }
+  } catch (e) {
+    Config.mprint('🚨 Исключение при выполнении запроса: $e');
+    throw Exception(
+        'Ошибка восстановления пароля, проверьте правильность введенных данных.');
+  }
 }
+}
+
 
 class UnauthorizedException implements Exception {
   final String message;
