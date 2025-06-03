@@ -25,9 +25,9 @@ class CourseRepositoryImpl implements CourseRepository {
   Future<Map<String, String>> _getHeaders() async {
     final token = await secureStorage.read(key: 'access_token');
     if (token == null) {
-      print('🔒 [CourseRepository] Токен доступа не найден');
+      Config.mprint('🔒 [CourseRepository] Токен доступа не найден');
     } else {
-      print('🔒 [CourseRepository] Токен доступа загружен');
+      Config.mprint('🔒 [CourseRepository] Токен доступа загружен');
     }
     return {
       'Content-Type': 'application/json',
@@ -40,23 +40,23 @@ class CourseRepositoryImpl implements CourseRepository {
   /// Получение списка всех курсов.
 @override
 Future<List<Course>> getAllCourses() async {
-  print('📚 [CourseRepository] Начало получения всех курсов');
+  Config.mprint('📚 [CourseRepository] Начало получения всех курсов');
   final headers = await _getHeaders();
   final uri = Uri.parse('$baseUrl/courses/courses/all');
-  print('📡 Отправка GET запроса на $uri');
+  Config.mprint('📡 Отправка GET запроса на $uri');
 
   try {
     final response = await http
         .get(uri, headers: headers)
         .timeout(const Duration(seconds: 10));
 
-    print('📬 Получен ответ с кодом: ${response.statusCode}');
-    print('📄 Тело ответа: ${response.body}');
+    Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+    Config.mprint('📄 Тело ответа: ${response.body}');
 
     if (response.statusCode == 200) {
       final data =
           json.decode(utf8.decode(response.bodyBytes)) as List<dynamic>;
-      print('✅ [CourseRepository] Получено ${data.length} курсов');
+      Config.mprint('✅ [CourseRepository] Получено ${data.length} курсов');
 
       final rawCourses = data.map((json) => Course.fromJson(json)).toList();
 
@@ -69,21 +69,21 @@ Future<List<Course>> getAllCourses() async {
       return coursesWithPayment;
     } else {
       final error = json.decode(response.body)['message'] ?? 'Ошибка получения курсов';
-      print('❌ [CourseRepository] Ошибка получения курсов: $error');
+      Config.mprint('❌ [CourseRepository] Ошибка получения курсов: $error');
       throw Exception(error);
     }
   } catch (e) {
-    print('🚨 [CourseRepository] Исключение при получении курсов: $e');
+    Config.mprint('🚨 [CourseRepository] Исключение при получении курсов: $e');
     throw Exception('Не удалось получить курсы. Проверьте подключение к интернету.');
   }
 }
   /// Получение деталей конкретного курса по его ID.
   @override
 Future<Course> getCourseByID(int courseID) async {
-  print('🔍 [CourseRepository] Начало получения курса с ID: $courseID');
+  Config.mprint('🔍 [CourseRepository] Начало получения курса с ID: $courseID');
   final headers = await _getHeaders();
   final uri = Uri.parse('$baseUrl/courses/courses/by_id/$courseID');
-  print('📡 Отправка GET запроса на $uri');
+  Config.mprint('📡 Отправка GET запроса на $uri');
 
   try {
     final response = await http
@@ -93,12 +93,12 @@ Future<Course> getCourseByID(int courseID) async {
         )
         .timeout(const Duration(seconds: 10));
 
-    print('📬 Получен ответ с кодом: ${response.statusCode}');
-    print('📄 Тело ответа: ${response.body}');
+    Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+    Config.mprint('📄 Тело ответа: ${response.body}');
 
     if (response.statusCode == 200) {
       final data = json.decode(utf8.decode(response.bodyBytes));
-      print('✅ [CourseRepository] Курс получен: ${data['title']}');
+      Config.mprint('✅ [CourseRepository] Курс получен: ${data['title']}');
       
       // Преобразуем данные в формат, ожидаемый моделью Course
       final courseData = {
@@ -111,19 +111,19 @@ Future<Course> getCourseByID(int courseID) async {
       };
       
       final course = Course.fromJson(courseData);
-      print('📊 Данные курса: $course');
+      Config.mprint('📊 Данные курса: $course');
       return course;
     } else {
       final error = json.decode(response.body)?['message'] ?? 
           'Ошибка получения курса (код ${response.statusCode})';
-      print('❌ [CourseRepository] Ошибка получения курса: $error');
+      Config.mprint('❌ [CourseRepository] Ошибка получения курса: $error');
       throw Exception(error);
     }
   }on http.ClientException catch (e) {
-    print('🌐 [CourseRepository] Ошибка сети: $e');
+    Config.mprint('🌐 [CourseRepository] Ошибка сети: $e');
     throw Exception('Проблемы с подключением к интернету');
   } catch (e) {
-    print('🚨 [CourseRepository] Неожиданная ошибка: $e');
+    Config.mprint('🚨 [CourseRepository] Неожиданная ошибка: $e');
     throw Exception('Произошла ошибка при получении курса');
   }
 }
@@ -133,8 +133,8 @@ Future<bool> checkCoursePayment(int courseId) async {
   final headers = await _getHeaders();
   final uri = Uri.parse('$baseUrl/payment/payment/status/by_course_id/$courseId');
   
-  print('🔍 Проверка статуса оплаты для курса ID: $courseId');
-  print('📡 Отправка GET запроса на $uri');
+  Config.mprint('🔍 Проверка статуса оплаты для курса ID: $courseId');
+  Config.mprint('📡 Отправка GET запроса на $uri');
 
   try {
     final response = await http.get(
@@ -142,37 +142,37 @@ Future<bool> checkCoursePayment(int courseId) async {
       headers: headers,
     ).timeout(const Duration(seconds: 10));
 
-    print('📬 Получен ответ с кодом: ${response.statusCode}');
-    print('📄 Тело ответа: ${response.body}');
+    Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+    Config.mprint('📄 Тело ответа: ${response.body}');
 
     // Если статус 200 - оплата подтверждена
     if (response.statusCode == 200) {
-      print('✅ Курс оплачен');
+      Config.mprint('✅ Курс оплачен');
       return true;
     }
     
     // Все остальные статусы - оплата не подтверждена
-    print('❌ Статус оплаты не подтвержден');
+    Config.mprint('❌ Статус оплаты не подтвержден');
     return false;
     
   } on TimeoutException {
-    print('⏱ Таймаут при проверке статуса оплаты');
+    Config.mprint('⏱ Таймаут при проверке статуса оплаты');
     return false;
   } on http.ClientException catch (e) {
-    print('🌐 Ошибка сети: $e');
+    Config.mprint('🌐 Ошибка сети: $e');
     return false;
   } catch (e) {
-    print('🚨 Неожиданная ошибка: $e');
+    Config.mprint('🚨 Неожиданная ошибка: $e');
     return false;
   }
 }
 
   @override
 Future<List<Category>> getAllCategories() async {
-  print('🔍 [CourseRepository] Начало получения всех категорий');
+  Config.mprint('🔍 [CourseRepository] Начало получения всех категорий');
   final headers = await _getHeaders();
   final uri = Uri.parse('$baseUrl/courses/category/all');
-  print('📡 Отправка GET запроса на $uri');
+  Config.mprint('📡 Отправка GET запроса на $uri');
 
   try {
     final response = await http
@@ -182,12 +182,12 @@ Future<List<Category>> getAllCategories() async {
         )
         .timeout(Duration(seconds: 10));
 
-    print('📬 Получен ответ с кодом: ${response.statusCode}');
-    print('📄 Тело ответа: ${response.body}');
+    Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+    Config.mprint('📄 Тело ответа: ${response.body}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
-      print('✅ [CourseRepository] Получено ${data.length} категорий');
+      Config.mprint('✅ [CourseRepository] Получено ${data.length} категорий');
       
       // Преобразуем каждую категорию из JSON в объект Category
       final categories = data.map((categoryJson) => Category.fromJson(categoryJson)).toList();
@@ -195,11 +195,11 @@ Future<List<Category>> getAllCategories() async {
       return categories;
     } else {
       final error = json.decode(response.body)['message'] ?? 'Ошибка получения категорий';
-      print('❌ [CourseRepository] Ошибка получения категорий: $error');
+      Config.mprint('❌ [CourseRepository] Ошибка получения категорий: $error');
       throw Exception(error);
     }
   } catch (e) {
-    print('🚨 [CourseRepository] Исключение при получении категорий: $e');
+    Config.mprint('🚨 [CourseRepository] Исключение при получении категорий: $e');
     throw Exception(
         'Не удалось получить категории. Проверьте подключение к интернету.');
   }
@@ -207,10 +207,10 @@ Future<List<Category>> getAllCategories() async {
 
 @override
 Future<List<Video>> getVideosByCourseId(int courseId) async {
-  print('🔍 [CourseRepository] Начало получения видео для курса ID: $courseId');
+  Config.mprint('🔍 [CourseRepository] Начало получения видео для курса ID: $courseId');
   final headers = await _getHeaders();
   final uri = Uri.parse('https://zavadovskayakurs.ru/api/v1/stream/stream/by_course_id/$courseId');
-  print('📡 Отправка GET запроса на $uri');
+  Config.mprint('📡 Отправка GET запроса на $uri');
 
   try {
     final response = await http
@@ -220,40 +220,40 @@ Future<List<Video>> getVideosByCourseId(int courseId) async {
         )
         .timeout(Duration(seconds: 10));
 
-    print('📬 Получен ответ с кодом: ${response.statusCode}');
-    print('📄 Тело ответа: ${response.body}');
+    Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+    Config.mprint('📄 Тело ответа: ${response.body}');
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
-      print('✅ [CourseRepository] Получено ${data.length} видео');
+      Config.mprint('✅ [CourseRepository] Получено ${data.length} видео');
       
       final videos = data.map((videoJson) => Video.fromJson(videoJson)).toList();
       return videos;
     } else {
       final error = json.decode(response.body)['message'] ?? 'Ошибка получения видео';
-      print('❌ [CourseRepository] Ошибка получения видео: $error');
+      Config.mprint('❌ [CourseRepository] Ошибка получения видео: $error');
       throw Exception(error);
     }
   } on TimeoutException {
-    print('⏱ [CourseRepository] Таймаут при получении видео');
+    Config.mprint('⏱ [CourseRepository] Таймаут при получении видео');
     throw Exception('Превышено время ожидания ответа от сервера');
   } on http.ClientException catch (e) {
-    print('🌐 [CourseRepository] Ошибка сети: $e');
+    Config.mprint('🌐 [CourseRepository] Ошибка сети: $e');
     throw Exception('Проблемы с подключением к интернету');
   } catch (e) {
-    print('🚨 [CourseRepository] Неожиданная ошибка: $e');
+    Config.mprint('🚨 [CourseRepository] Неожиданная ошибка: $e');
     throw Exception('Произошла ошибка при получении видео');
   }
 }
 
 @override
 Future<VideoPlayerController> getVideoStream(int videoId) async {
-  print('🔍 [VideoRepository] Получение видео потока для ID: $videoId');
+  Config.mprint('🔍 [VideoRepository] Получение видео потока для ID: $videoId');
   final headers = await _getHeaders();
   headers['Range'] = 'bytes=0-';
   final uri = Uri.parse('https://zavadovskayakurs.ru/api/v1/stream/stream/by_id/$videoId');
   
-  print('📡 Отправка GET запроса на $uri с заголовками: $headers');
+  Config.mprint('📡 Отправка GET запроса на $uri с заголовками: $headers');
 
   try {
     // Создаем контроллер для потокового видео
@@ -265,11 +265,11 @@ Future<VideoPlayerController> getVideoStream(int videoId) async {
 
     // Инициализируем контроллер
     await controller.initialize();
-    print('✅ [VideoRepository] Видео поток успешно инициализирован');
+    Config.mprint('✅ [VideoRepository] Видео поток успешно инициализирован');
     
     return controller;
   } on TimeoutException {
-    print('⏱ [VideoRepository] Таймаут при получении видео потока');
+    Config.mprint('⏱ [VideoRepository] Таймаут при получении видео потока');
     throw Exception('Превышено время ожидания ответа от сервера');
   }
 }
@@ -279,11 +279,11 @@ Future<VideoPlayerController> getVideoStream(int videoId) async {
   /// Обновление существующего курса.
   // @override
   // Future<void> updateCourse(Course course) async {
-  //   print(
+  //   Config.mprint(
   //       '✏️ [CourseRepository] Начало обновления курса с ID: ${course.courseID}');
   //   final headers = await _getHeaders();
   //   final uri = Uri.parse('$baseUrl/UpdateCourse');
-  //   print('📡 Отправка POST запроса на $uri с телом: ${json.encode({
+  //   Config.mprint('📡 Отправка POST запроса на $uri с телом: ${json.encode({
   //         'courseID': course.courseID,
   //         'title': course.title,
   //         'description': course.description,
@@ -308,19 +308,19 @@ Future<VideoPlayerController> getVideoStream(int videoId) async {
   //         )
   //         .timeout(Duration(seconds: 10)); // Добавлен таймаут 10 секунд
 
-  //     print('📬 Получен ответ с кодом: ${response.statusCode}');
-  //     print('📄 Тело ответа: ${response.body}');
+  //     Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+  //     Config.mprint('📄 Тело ответа: ${response.body}');
 
   //     if (response.statusCode != 200) {
   //       final error =
   //           json.decode(response.body)['message'] ?? 'Ошибка обновления курса';
-  //       print('❌ [CourseRepository] Ошибка обновления курса: $error');
+  //       Config.mprint('❌ [CourseRepository] Ошибка обновления курса: $error');
   //       throw Exception(error);
   //     } else {
-  //       print('✅ [CourseRepository] Курс успешно обновлён');
+  //       Config.mprint('✅ [CourseRepository] Курс успешно обновлён');
   //     }
   //   } catch (e) {
-  //     print('🚨 [CourseRepository] Исключение при обновлении курса: $e');
+  //     Config.mprint('🚨 [CourseRepository] Исключение при обновлении курса: $e');
   //     throw Exception(
   //         'Не удалось обновить курс. Проверьте подключение к интернету.');
   //   }
@@ -328,10 +328,10 @@ Future<VideoPlayerController> getVideoStream(int videoId) async {
   // /// Создание нового курса.
   // @override
   // Future<void> createCourse(Course course) async {
-  //   print('📝 [CourseRepository] Начало создания курса: ${course.title}');
+  //   Config.mprint('📝 [CourseRepository] Начало создания курса: ${course.title}');
   //   final headers = await _getHeaders();
   //   final uri = Uri.parse('$baseUrl/CreateCourse');
-  //   print('📡 Отправка POST запроса на $uri с телом: ${json.encode({
+  //   Config.mprint('📡 Отправка POST запроса на $uri с телом: ${json.encode({
   //         'title': course.title,
   //         'description': course.description,
   //         'thumbnailUrl': course.thumbnailUrl,
@@ -354,19 +354,19 @@ Future<VideoPlayerController> getVideoStream(int videoId) async {
   //         )
   //         .timeout(Duration(seconds: 10)); // Добавлен таймаут 10 секунд
 
-  //     print('📬 Получен ответ с кодом: ${response.statusCode}');
-  //     print('📄 Тело ответа: ${response.body}');
+  //     Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+  //     Config.mprint('📄 Тело ответа: ${response.body}');
 
   //     if (response.statusCode != 200) {
   //       final error =
   //           json.decode(response.body)['message'] ?? 'Ошибка создания курса';
-  //       print('❌ [CourseRepository] Ошибка создания курса: $error');
+  //       Config.mprint('❌ [CourseRepository] Ошибка создания курса: $error');
   //       throw Exception(error);
   //     } else {
-  //       print('✅ [CourseRepository] Курс успешно создан');
+  //       Config.mprint('✅ [CourseRepository] Курс успешно создан');
   //     }
   //   } catch (e) {
-  //     print('🚨 [CourseRepository] Исключение при создании курса: $e');
+  //     Config.mprint('🚨 [CourseRepository] Исключение при создании курса: $e');
   //     throw Exception(
   //         'Не удалось создать курс. Проверьте подключение к интернету.');
   //   }
@@ -375,10 +375,10 @@ Future<VideoPlayerController> getVideoStream(int videoId) async {
   /// Удаление существующего курса по его ID.
   // @override
   // Future<void> deleteCourse(int courseID) async {
-  //   print('🗑️ [CourseRepository] Начало удаления курса с ID: $courseID');
+  //   Config.mprint('🗑️ [CourseRepository] Начало удаления курса с ID: $courseID');
   //   final headers = await _getHeaders();
   //   final uri = Uri.parse('$baseUrl/DeleteCourse');
-  //   print('📡 Отправка POST запроса на $uri с телом: ${json.encode({
+  //   Config.mprint('📡 Отправка POST запроса на $uri с телом: ${json.encode({
   //         'courseID': courseID
   //       })}');
 
@@ -391,19 +391,19 @@ Future<VideoPlayerController> getVideoStream(int videoId) async {
   //         )
   //         .timeout(Duration(seconds: 10)); // Добавлен таймаут 10 секунд
 
-  //     print('📬 Получен ответ с кодом: ${response.statusCode}');
-  //     print('📄 Тело ответа: ${response.body}');
+  //     Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+  //     Config.mprint('📄 Тело ответа: ${response.body}');
 
   //     if (response.statusCode != 200) {
   //       final error =
   //           json.decode(response.body)['message'] ?? 'Ошибка удаления курса';
-  //       print('❌ [CourseRepository] Ошибка удаления курса: $error');
+  //       Config.mprint('❌ [CourseRepository] Ошибка удаления курса: $error');
   //       throw Exception(error);
   //     } else {
-  //       print('✅ [CourseRepository] Курс успешно удалён');
+  //       Config.mprint('✅ [CourseRepository] Курс успешно удалён');
   //     }
   //   } catch (e) {
-  //     print('🚨 [CourseRepository] Исключение при удалении курса: $e');
+  //     Config.mprint('🚨 [CourseRepository] Исключение при удалении курса: $e');
   //     throw Exception(
   //         'Не удалось удалить курс. Проверьте подключение к интернету.');
   //   }

@@ -21,7 +21,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> _savePurchasedCourses(List<int> courseIds) async {
     final jsonString = json.encode(courseIds);
     await secureStorage.write(key: 'purchased_courses', value: jsonString);
-    print('✅ [AuthRepository] Сохранены купленные курсы: $courseIds');
+    Config.mprint('✅ [AuthRepository] Сохранены купленные курсы: $courseIds');
   }
 
   // Получение списка купленных курсов
@@ -31,26 +31,31 @@ class AuthRepositoryImpl implements AuthRepository {
       try {
         final List<dynamic> jsonList = json.decode(jsonString);
         final List<int> courseIds = jsonList.cast<int>();
-        print('🔄 [AuthRepository] Получены купленные курсы: $courseIds');
+        Config.mprint('🔄 [AuthRepository] Получены купленные курсы: $courseIds');
         return courseIds;
       } catch (e) {
-        print('🚨 [AuthRepository] Ошибка декодирования купленных курсов: $e');
+        Config.mprint('🚨 [AuthRepository] Ошибка декодирования купленных курсов: $e');
         return [];
       }
     }
-    print('🔄 [AuthRepository] Купленные курсы не найдены');
+    Config.mprint('🔄 [AuthRepository] Купленные курсы не найдены');
     return [];
   }
 
   @override
-Future<Map<String, dynamic>> login(String email, String password) async {
-  print('🔑 [AuthRepository] Начало запроса логина');
-  print('📧 Email: $email');
+Future<Map<String, dynamic>> login(String login, String password) async {
+  Config.mprint('🔑 [AuthRepository] Начало запроса логина');
+  Config.mprint('📧 Login: $login');
   // 🔒 Password: $password // **Важно:** В продакшене не рекомендуется логировать пароли
+
+  if (login[0] == "7" || login[0] == "8" || login[0] == "+") {
+    login = login.replaceAll("+", "");
+    login = login.substring(1);
+  }
 
   try {
     final uri = Uri.parse('$baseUrl/auth/login');
-    print('📡 Отправка POST запроса на $uri');
+    Config.mprint('📡 Отправка POST запроса на $uri');
 
     final response = await http
         .post(
@@ -59,12 +64,12 @@ Future<Map<String, dynamic>> login(String email, String password) async {
             'Content-Type': 'application/json',
             'accept': 'application/json',
           },
-          body: json.encode({'login': email, 'password': password}),
+          body: json.encode({'login': login, 'password': password}),
         )
         .timeout(const Duration(seconds: 10));
 
-    print('📬 Получен ответ с кодом: ${response.statusCode}');
-    print('📄 Тело ответа: ${response.body}');
+    Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+    Config.mprint('📄 Тело ответа: ${response.body}');
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
@@ -73,10 +78,10 @@ Future<Map<String, dynamic>> login(String email, String password) async {
         throw Exception('Ошибка: токен не найден в ответе сервера.');
       }
       await secureStorage.write(key: 'access_token', value: token);
-      print('✅ Логин успешен. Токен сохранен.');
+      Config.mprint('✅ Логин успешен. Токен сохранен.');
 
       Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-      print('👤 Декодированный токен: $decodedToken');
+      Config.mprint('👤 Декодированный токен: $decodedToken');
 
       List<int> purchasedCourses = await _getPurchasedCourses();
 
@@ -94,11 +99,11 @@ Future<Map<String, dynamic>> login(String email, String password) async {
       } catch (_) {
         // Игнорируем ошибку парсинга, оставляем стандартное сообщение
       }
-      print('❌ Ошибка логина: $error');
+      Config.mprint('❌ Ошибка логина: $error');
       throw Exception(error);
     }
   } catch (e) {
-    print('🚨 Исключение при выполнении логина: $e');
+    Config.mprint('🚨 Исключение при выполнении логина: $e');
     throw Exception(
         'Не удалось выполнить логин. Проверьте подключение к интернету и правильность введённых данных.');
   }
@@ -109,16 +114,16 @@ Future<Map<String, dynamic>> login(String email, String password) async {
   Future<Map<String, dynamic>> registration(
       String name,String phone, String email,  String password,
       {String photoPath = ""}) async {
-    print('📝 [AuthRepository] Начало запроса регистрации');
-    print('🧑‍💼 Name: $name');
-    print('📧 Email: $email');
-    print('📞 Phone: $phone');
-    print('🖼️ Photo path: $photoPath');
+    Config.mprint('📝 [AuthRepository] Начало запроса регистрации');
+    Config.mprint('🧑‍💼 Name: $name');
+    Config.mprint('📧 Email: $email');
+    Config.mprint('📞 Phone: $phone');
+    Config.mprint('🖼️ Photo path: $photoPath');
     // 🔒 Password: $password // **Важно:** В продакшене не рекомендуется логировать пароли
 
     try {
       final uri = Uri.parse('$baseUrl/auth/registration');
-      print('📡 Отправка POST запроса на $uri');
+      Config.mprint('📡 Отправка POST запроса на $uri');
 
       final response = await http
           .post(
@@ -127,25 +132,30 @@ Future<Map<String, dynamic>> login(String email, String password) async {
             body: json.encode({
               'name': name,
               'email': email,
-              'phone': phone,
+              'phone': phone
+                      .replaceAll(" ", "")
+                      .replaceAll("(", "")
+                      .replaceAll(")", "")
+                      .replaceAll("+7", "")
+                      .replaceAll("-", "") ,
               'photo_path': photoPath,
               'password': password,
             }),
           )
           .timeout(Duration(seconds: 10));
 
-      print('📬 Получен ответ с кодом: ${response.statusCode}');
-      print('📄 Тело ответа: ${response.body}');
+      Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+      Config.mprint('📄 Тело ответа: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final token = data['token']; // Получаем токен из ответа
         await secureStorage.write(key: 'access_token', value: token);
-        print('✅ Регистрация успешна. Токен сохранен.');
+        Config.mprint('✅ Регистрация успешна. Токен сохранен.');
 
         // Декодирование токена для получения информации о пользователе
         Map<String, dynamic> decodedToken = JwtDecoder.decode(token);
-        print('👤 Декодированный токен: $decodedToken');
+        Config.mprint('👤 Декодированный токен: $decodedToken');
 
         // Получение списка купленных курсов (если есть, иначе пустой)
         List<int> purchasedCourses = await _getPurchasedCourses();
@@ -158,33 +168,33 @@ Future<Map<String, dynamic>> login(String email, String password) async {
         final error = json.decode(response.body)?['message'] ?? 
             json.decode(response.body)?['error'] ?? 
             'Ошибка регистрации';
-        print('❌ Ошибка регистрации: $error');
+        Config.mprint('❌ Ошибка регистрации: $error');
         throw Exception(error);
       }
     } on TimeoutException {
-      print('⏱️ Превышено время ожидания ответа от сервера');
+      Config.mprint('⏱️ Превышено время ожидания ответа от сервера');
       throw Exception('Сервер не отвечает. Попробуйте позже.');
     } on http.ClientException catch (e) {
-      print('🌐 Ошибка сети: $e');
+      Config.mprint('🌐 Ошибка сети: $e');
       throw Exception('Проблемы с подключением к интернету');
     } catch (e) {
-      print('🚨 Неожиданное исключение при регистрации: $e');
+      Config.mprint('🚨 Неожиданное исключение при регистрации: $e');
       throw Exception('Произошла непредвиденная ошибка. Попробуйте снова.');
     }
   }
 
   @override
   Future<void> logout() async {
-    print('🚪 [AuthRepository] Начало выхода из системы');
-
+    Config.mprint('🚪 [AuthRepository] Начало выхода из системы');
+    
     try {
       await secureStorage.delete(key: 'access_token');
       await secureStorage.delete(key: 'refresh_token');
       await secureStorage.delete(
           key: 'purchased_courses'); // Удаление купленных курсов
-      print('✅ Выход успешен. Токены и купленные курсы удалены.');
+      Config.mprint('✅ Выход успешен. Токены и купленные курсы удалены.');
     } catch (e) {
-      print('🚨 Исключение при выполнении выхода: $e');
+      Config.mprint('🚨 Исключение при выполнении выхода: $e');
       throw Exception('Не удалось выполнить выход из системы.');
     }
   }
@@ -192,23 +202,23 @@ Future<Map<String, dynamic>> login(String email, String password) async {
   @override
   Future<User> getCurrentUser() async {
     const methodName = 'getCurrentUser';
-    print('👤 [AuthRepository] Запрос текущего пользователя');
+    Config.mprint('👤 [AuthRepository] Запрос текущего пользователя');
 
     try {
       // 1. Получение токена из безопасного хранилища
       final accessToken = await secureStorage.read(key: 'access_token');
       if (accessToken == null || accessToken.isEmpty) {
-        print('❌ $methodName: Токен доступа не найден или пуст');
+        Config.mprint('❌ $methodName: Токен доступа не найден или пуст');
         throw const UnauthorizedException('Требуется авторизация');
       }
 
       // 2. Декодирование JWT токена
       final decodedToken = _decodeToken(accessToken);
-      print('🔍 $methodName: Декодированный токен: $decodedToken');
+      Config.mprint('🔍 $methodName: Декодированный токен: $decodedToken');
 
       // 3. Получение списка купленных курсов
       final purchasedCourses = await _getPurchasedCourses();
-      print('🛒 $methodName: Найдено курсов: ${purchasedCourses.length}');
+      Config.mprint('🛒 $methodName: Найдено курсов: ${purchasedCourses.length}');
 
       // 4. Создание объекта пользователя
       return User(
@@ -224,11 +234,11 @@ Future<Map<String, dynamic>> login(String email, String password) async {
     } on UnauthorizedException {
       rethrow;
     } on JwtException catch (e) {
-      print('🚨 $methodName: Ошибка декодирования токена: ${e.message}');
+      Config.mprint('🚨 $methodName: Ошибка декодирования токена: ${e.message}');
       throw const UnauthorizedException('Недействительная сессия');
     } catch (e, stackTrace) {
-      print('🚨 $methodName: Неожиданная ошибка: $e');
-      print('📌 Stack trace: $stackTrace');
+      Config.mprint('🚨 $methodName: Неожиданная ошибка: $e');
+      Config.mprint('📌 Stack trace: $stackTrace');
       throw AppException('Не удалось загрузить данные пользователя');
     }
   }
@@ -247,23 +257,23 @@ Future<Map<String, dynamic>> login(String email, String password) async {
   @override
   Future<bool> isLoggedIn() async {
     final accessToken = await secureStorage.read(key: 'access_token');
-    print('🔑 [AuthRepository] Проверка авторизации: ${accessToken != null}');
+    Config.mprint('🔑 [AuthRepository] Проверка авторизации: ${accessToken != null}');
     return accessToken != null;
   }
 
   @override
   Future<void> refreshToken() async {
-    print('🔄 [AuthRepository] Начало обновления токена');
+    Config.mprint('🔄 [AuthRepository] Начало обновления токена');
 
     try {
       final accessToken = await secureStorage.read(key: 'access_token');
       if (accessToken == null) {
-        print('❌ Токен не найден');
+        Config.mprint('❌ Токен не найден');
         throw Exception('Отсутствует токен');
       }
 
       final uri = Uri.parse('$baseUrl/auth/refresh');
-      print('📡 Отправка POST запроса на $uri с токеном');
+      Config.mprint('📡 Отправка POST запроса на $uri с токеном');
 
       final response = await http
           .post(
@@ -275,58 +285,58 @@ Future<Map<String, dynamic>> login(String email, String password) async {
           )
           .timeout(Duration(seconds: 10)); // Добавлен таймаут 10 секунд
 
-      print('📬 Получен ответ с кодом: ${response.statusCode}');
-      print('📄 Тело ответа: ${response.body}');
+      Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+      Config.mprint('📄 Тело ответа: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final newToken = data['token']; // Получаем новый токен
         await secureStorage.write(key: 'access_token', value: newToken);
-        print('✅ Токен успешно обновлен');
+        Config.mprint('✅ Токен успешно обновлен');
       } else {
         final error =
             json.decode(response.body)['message'] ?? 'Ошибка обновления токена';
-        print('❌ Ошибка обновления токена: $error');
+        Config.mprint('❌ Ошибка обновления токена: $error');
         throw Exception(error);
       }
     } catch (e) {
-      print('🚨 Исключение при обновлении токена: $e');
+      Config.mprint('🚨 Исключение при обновлении токена: $e');
       throw Exception('Не удалось обновить токен.');
     }
   }
 
   Future<void> addPurchasedCourse(int courseID) async {
-    print('🛒 [AuthRepository] Добавление купленного курса с ID: $courseID');
+    Config.mprint('🛒 [AuthRepository] Добавление купленного курса с ID: $courseID');
     try {
       List<int> purchasedCourses = await _getPurchasedCourses();
       if (!purchasedCourses.contains(courseID)) {
         purchasedCourses.add(courseID);
         await _savePurchasedCourses(purchasedCourses);
-        print(
+        Config.mprint(
             '✅ [AuthRepository] Курс добавлен в купленные: $purchasedCourses');
       } else {
-        print('ℹ️ [AuthRepository] Курс уже куплен: $courseID');
+        Config.mprint('ℹ️ [AuthRepository] Курс уже куплен: $courseID');
       }
     } catch (e) {
-      print('🚨 [AuthRepository] Ошибка при добавлении купленного курса: $e');
+      Config.mprint('🚨 [AuthRepository] Ошибка при добавлении купленного курса: $e');
       throw Exception('Не удалось добавить купленный курс.');
     }
   }
 
   /// Метод для удаления купленного курса
   Future<void> removePurchasedCourse(int courseID) async {
-    print('🛍️ [AuthRepository] Удаление купленного курса с ID: $courseID');
+    Config.mprint('🛍️ [AuthRepository] Удаление купленного курса с ID: $courseID');
     try {
       List<int> purchasedCourses = await _getPurchasedCourses();
       if (purchasedCourses.contains(courseID)) {
         purchasedCourses.remove(courseID);
         await _savePurchasedCourses(purchasedCourses);
-        print('✅ [AuthRepository] Курс удалён из купленных: $purchasedCourses');
+        Config.mprint('✅ [AuthRepository] Курс удалён из купленных: $purchasedCourses');
       } else {
-        print('ℹ️ [AuthRepository] Курс не найден в купленных: $courseID');
+        Config.mprint('ℹ️ [AuthRepository] Курс не найден в купленных: $courseID');
       }
     } catch (e) {
-      print('🚨 [AuthRepository] Ошибка при удалении купленного курса: $e');
+      Config.mprint('🚨 [AuthRepository] Ошибка при удалении купленного курса: $e');
       throw Exception('Не удалось удалить купленный курс.');
     }
   }

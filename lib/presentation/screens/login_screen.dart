@@ -146,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         inputFormatters: [phoneMask],
                         validator: (_) {
                           final phone = phoneMask.getUnmaskedText();
-                          if (phone.isEmpty || phone.length != 11) {
+                          if (phone.isEmpty || phone.length != 10) {
                             return 'Введите корректный номер';
                           }
                           return null;
@@ -156,12 +156,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                     _buildTextField(
                       controller: emailController,
-                      hint: 'Email',
+                      hint: 'Email или номер телефона',
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Введите email';
-                        final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                        return !regex.hasMatch(v) ? 'Неверный email' : null;
+                        if (v == null || v.isEmpty) return 'Введите email или номер телефона';
+                        
+                        // Проверка на email
+                        final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                        // Проверка на российский номер телефона (+7XXXXXXXXXX, 8XXXXXXXXXX, 7XXXXXXXXXX)
+                        final phoneRegex = RegExp(r'^(\+7|7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$');
+                        
+                        if (!emailRegex.hasMatch(v) && !phoneRegex.hasMatch(v)) {
+                          return 'Неверный формат email или номера телефона';
+                        }
+                        return null;
                       },
                     ),
                     const SizedBox(height: 10),

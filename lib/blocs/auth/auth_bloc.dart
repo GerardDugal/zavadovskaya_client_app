@@ -2,6 +2,7 @@
 
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:zavadovskaya_client_app/config.dart';
 import '../../data/models/user.dart';
 import '../../data/repositories/auth_repository.dart';
 
@@ -40,26 +41,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 Future<void> _onLoginRequested(LoginRequested event, Emitter<AuthState> emit) async {
-  print('AuthBloc: _onLoginRequested, email: ${event.email}');
+  Config.mprint('AuthBloc: _onLoginRequested, email: ${event.email}');
   emit(AuthLoading());
-  print('AuthBloc: состояние AuthLoading эмитировано');
+  Config.mprint('AuthBloc: состояние AuthLoading эмитировано');
 
   _lastEmail = event.email;
   _lastPassword = event.password;
 
   try {
     final result = await authRepository.login(event.email, event.password);
-    print('AuthBloc: login успешно, результат: $result');
+    Config.mprint('AuthBloc: login успешно, результат: $result');
 
     final user = await authRepository.getCurrentUser();
-    print('AuthBloc: пользователь получен: $user');
+    Config.mprint('AuthBloc: пользователь получен: $user');
 
     emit(AuthAuthenticated(user: user));
-    print('AuthBloc: состояние AuthAuthenticated эмитировано');
+    Config.mprint('AuthBloc: состояние AuthAuthenticated эмитировано');
   } catch (e) {
-    print('AuthBloc: ошибка при логине: $e');
+    Config.mprint('AuthBloc: ошибка при логине: $e');
     emit(AuthFailure(error: e.toString()));
-    print('AuthBloc: состояние AuthFailure эмитировано');
+    Config.mprint('AuthBloc: состояние AuthFailure эмитировано');
   }
 }
 
