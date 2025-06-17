@@ -2,8 +2,11 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'package:ffmpeg_wasm/ffmpeg_wasm.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:universal_html/html.dart' as html;
 import 'package:video_player/video_player.dart';
 import 'package:zavadovskaya_client_app/data/models/category.dart';
 import 'package:zavadovskaya_client_app/data/models/video.dart';
@@ -251,26 +254,95 @@ Future<VideoPlayerController> getVideoStream(int videoId) async {
   Config.mprint('🔍 [VideoRepository] Получение видео потока для ID: $videoId');
   final headers = await _getHeaders();
   headers['Range'] = 'bytes=0-';
-  final uri = Uri.parse('https://zavadovskayakurs.ru/api/v1/stream/stream/by_id/$videoId');
+  final videoUrl = 'https://zavadovskayakurs.ru/api/v1/stream/stream/by_id/$videoId';
+  // const videoUrl = 'https://tekeye.uk/html/images/Joren_Falls_Izu_Jap.mp4';
   
-  Config.mprint('📡 Отправка GET запроса на $uri с заголовками: $headers');
+  
+  Config.mprint('📡 Отправка GET запроса на $videoUrl с заголовками: $headers');
 
   try {
-    // Создаем контроллер для потокового видео
+    // if (kIsWeb) {
+    //   return await _getConvertedWebVideo(videoUrl, headers);
+    // }
+    
     final controller = VideoPlayerController.networkUrl(
-  uri,
-  httpHeaders: headers,
-  videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true), // <- важно для Android
-);
-
-    // Инициализируем контроллер
+      Uri.parse(videoUrl),
+      httpHeaders: headers,
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
+    
     await controller.initialize();
     Config.mprint('✅ [VideoRepository] Видео поток успешно инициализирован');
-    
     return controller;
-  } on TimeoutException {
-    Config.mprint('⏱ [VideoRepository] Таймаут при получении видео потока');
-    throw Exception('Превышено время ожидания ответа от сервера');
+  } catch (e, st) {
+    Config.mprint('❌ Ошибка инициализации видео: $e\n$st');
+    throw Exception('Не удалось загрузить видео: ${e.toString()}');
   }
 }
+
+Future<VideoPlayerController> _getConvertedWebVideo(String videoUrl, Map<String, String> headers) async {
+
+  try {
+    Config.mprint('🔄 Initializing FFmpeg...');
+
+    // Correct initialization method
+    final ffmpeg = createFFmpeg(CreateFFmpegParam(log: true));
+    await ffmpeg.load();
+
+    // Optional: Load core from specific URL if needed
+    // await ffmpeg.load({
+    //   'coreURL': 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
+    //   'wasmURL': 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.wasm',
+    // });
+
+    Config.mprint('📥 Downloading video...');
+    final response = await http.get(Uri.parse(videoUrl), headers: headers);
+    final inputName = 'input_${DateTime.now().millisecondsSinceEpoch}.mp4';
+    ffmpeg.writeFile(inputName, response.bodyBytes);
+
+    Config.mprint('🔄 Converting video...');
+    const outputName = 'output.mp4';
+    ffmpeg.readDir([
+      '-i', inputName,
+      '-c:v', 'libx264',
+      '-profile:v', 'main',
+      '-pix_fmt', 'yuv420p',
+      '-movflags', '+faststart',
+      '-c:a', 'aac',
+      '-b:a', '128k',
+      outputName
+    ] as String);
+
+    Config.mprint('📤 Getting converted video...');
+    final data = await ffmpeg.readFile(outputName);
+    final blob = html.Blob([data], 'video/mp4');
+    final url = html.Url.createObjectUrl(blob);
+
+    Config.mprint('▶️ Initializing player...');
+    final controller = VideoPlayerController.network(url);
+    await controller.initialize();
+    
+    // Cleanup when disposed
+    controller.addListener(() {
+      if (!controller.value.isInitialized) {
+        html.Url.revokeObjectUrl(url);
+      }
+    });
+
+    Config.mprint('✅ Conversion successful');
+    return controller;
+  } catch (e, st) {
+    Config.mprint('❌ Conversion failed, trying fallback: $e\n$st');
+    
+    // Fallback to original video
+    try {
+      final controller = VideoPlayerController.network(videoUrl, httpHeaders: headers);
+      await controller.initialize();
+      return controller;
+    } catch (e) {
+      throw Exception('All video playback methods failed: ${e.toString()}');
+    }
+  }
+}
+
 }
