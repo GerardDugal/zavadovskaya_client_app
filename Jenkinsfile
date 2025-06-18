@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image 'fischerscode/flutter:latest'  // Используем существующий тег
+            image 'growerp/flutter-sdk-image:latest'  // Используем существующий тег
             args '--platform linux/amd64 -u root -v /usr/bin/chromium:/usr/bin/chromium'
         }
     }
