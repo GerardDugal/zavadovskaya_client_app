@@ -1,14 +1,11 @@
 pipeline {
-    agent {
-        docker {
-            image 'growerp/flutter-sdk-image:latest'  // Используем существующий тег
-            args '--platform linux/amd64 -u root -v /usr/bin/chromium:/usr/bin/chromium'
-        }
-    }
+    agent any
 
     environment {
         WEB_BUILD_DIR = 'build/web'
         REMOTE_DIR = '/root/Courses-frontend'
+        FLUTTER_USER = 'flutteruser'
+        FLUTTER_PASS = 'Gfhjkm007q..'
     }
 
     stages {
@@ -20,34 +17,88 @@ pipeline {
 
         stage('Setup Flutter') {
             steps {
-                sh 'flutter --version'
-                sh 'flutter config --enable-web'
-                sh 'flutter doctor -v'
+                script {
+                    sh '''
+                    expect -c "
+                    spawn sudo -u ${FLUTTER_USER} flutter --version
+                    expect {
+                        \\"[sudo] password for\\" { send \\"${FLUTTER_PASS}\\r\"; exp_continue }
+                        eof
+                    }
+                    "
+                    '''
+                    sh '''
+                    expect -c "
+                    spawn sudo -u ${FLUTTER_USER} flutter config --enable-web
+                    expect {
+                        \\"[sudo] password for\\" { send \\"${FLUTTER_PASS}\\r\"; exp_continue }
+                        eof
+                    }
+                    "
+                    '''
+                    sh '''
+                    expect -c "
+                    spawn sudo -u ${FLUTTER_USER} flutter doctor -v
+                    expect {
+                        \\"[sudo] password for\\" { send \\"${FLUTTER_PASS}\\r\"; exp_continue }
+                        eof
+                    }
+                    "
+                    '''
+                }
             }
         }
 
         stage('Get Dependencies') {
             steps {
-                sh 'flutter pub get'
+                script {
+                    sh '''
+                    expect -c "
+                    spawn sudo -u ${FLUTTER_USER} flutter pub get
+                    expect {
+                        \\"[sudo] password for\\" { send \\"${FLUTTER_PASS}\\r\"; exp_continue }
+                        eof
+                    }
+                    "
+                    '''
+                }
             }
         }
 
         stage('Build Web') {
             steps {
-                sh 'flutter build web --release --web-renderer html'
+                script {
+                    sh '''
+                    expect -c "
+                    spawn sudo -u ${FLUTTER_USER} flutter build web --release --web-renderer html
+                    expect {
+                        \\"[sudo] password for\\" { send \\"${FLUTTER_PASS}\\r\"; exp_continue }
+                        eof
+                    }
+                    "
+                    '''
+                }
             }
         }
 
         stage('Prepare Deployment') {
             steps {
                 script {
-                    sh "tar -czf flutter_build.tar.gz -C ${env.WEB_BUILD_DIR} ."
-                    
+                    sh '''
+                    expect -c "
+                    spawn sudo -u ${FLUTTER_USER} bash -c 'tar -czf flutter_build.tar.gz -C ${WEB_BUILD_DIR} .'
+                    expect {
+                        \\"[sudo] password for\\" { send \\"${FLUTTER_PASS}\\r\"; exp_continue }
+                        eof
+                    }
+                    "
+                    '''
+
                     writeFile file: 'deploy.sh', text: """#!/bin/bash
 systemctl stop nginx || true
-rm -rf ${env.REMOTE_DIR}/*
-mkdir -p ${env.REMOTE_DIR}
-tar -xzf flutter_build.tar.gz -C ${env.REMOTE_DIR}
+rm -rf ${REMOTE_DIR}/*
+mkdir -p ${REMOTE_DIR}
+tar -xzf flutter_build.tar.gz -C ${REMOTE_DIR}
 systemctl start nginx || true
 """
                     sh 'chmod +x deploy.sh'
