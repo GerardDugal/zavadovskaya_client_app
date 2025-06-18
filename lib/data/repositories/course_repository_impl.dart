@@ -248,123 +248,27 @@ Future<List<Video>> getVideosByCourseId(int courseId) async {
 
 @override
 Future<VideoPlayerController> getVideoStream(int videoId) async {
-  Config.mprint('🔍 [VideoRepository] Получение видео потока для ID: $videoId');
-  
-  final headers = await _getHeaders();
-  headers['Range'] = 'bytes=0-';
-  final videoUrl = '$baseUrl/stream/stream/by_id/$videoId'; // Явно указываем .mp4
-  
-  Config.mprint('📡 Запрос видео по URL: $videoUrl');
+    final headers = await _getHeaders();
+    final videoUrl = '$baseUrl/stream/stream/by_id/$videoId';
 
-  try {
-    // Для веба используем простой network controller
-    if (kIsWeb) {
-      Config.mprint('🌐 Используем веб-версию видеоплеера');
-      Config.mprint('ссфлка $baseUrl/stream/stream/by_id/$videoId');
-      Config.mprint('$headers');
-      final controller = VideoPlayerController.networkUrl(
-        Uri.parse(videoUrl),
+    try {
+      final controller = VideoPlayerController.network(
+        videoUrl,
         httpHeaders: headers,
       );
-      Config.mprint('$controller');
-      await controller.initialize();
-      Config.mprint('✅ Видео успешно инициализировано для веба');
-      return controller;
-    }
 
-    // Для мобильных устройств используем networkUrl с поддержкой потоков
-    Config.mprint('📱 Используем мобильную версию видеоплеера');
-    final controller = VideoPlayerController.networkUrl(
-      Uri.parse(videoUrl),
-      httpHeaders: headers,
-      videoPlayerOptions: VideoPlayerOptions(
-        mixWithOthers: true,
-      ),
-    );
+      await controller.initialize().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          controller.dispose();
+          throw TimeoutException('Video initialization timeout');
+        },
+      );
 
-    // Таймаут инициализации (15 секунд)
-    await controller.initialize().timeout(
-      const Duration(seconds: 15),
-      onTimeout: () {
-        controller.dispose();
-        throw TimeoutException('Инициализация видео заняла слишком много времени');
-      },
-    );
-
-    Config.mprint('✅ Видео успешно инициализировано');
-    return controller;
-  } on TimeoutException catch (e) {
-    Config.mprint('⏱ Таймаут при загрузке видео: $e');
-    throw Exception('Превышено время ожидания загрузки видео');
-  } catch (e) {
-    Config.mprint('🚨 ошибка: $e');
-    throw Exception('Произошла ошибка при получении видео');
-  }
-}
-
-Future<VideoPlayerController> _getConvertedWebVideo(String videoUrl, Map<String, String> headers) async {
-
-  try {
-    Config.mprint('🔄 Initializing FFmpeg...');
-
-    // Correct initialization method
-    final ffmpeg = createFFmpeg(CreateFFmpegParam(log: true));
-    await ffmpeg.load();
-
-    // Optional: Load core from specific URL if needed
-    // await ffmpeg.load({
-    //   'coreURL': 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js',
-    //   'wasmURL': 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.wasm',
-    // });
-
-    Config.mprint('📥 Downloading video...');
-    final response = await http.get(Uri.parse(videoUrl), headers: headers);
-    final inputName = 'input_${DateTime.now().millisecondsSinceEpoch}.mp4';
-    ffmpeg.writeFile(inputName, response.bodyBytes);
-
-    Config.mprint('🔄 Converting video...');
-    const outputName = 'output.mp4';
-    ffmpeg.readDir([
-      '-i', inputName,
-      '-c:v', 'libx264',
-      '-profile:v', 'main',
-      '-pix_fmt', 'yuv420p',
-      '-movflags', '+faststart',
-      '-c:a', 'aac',
-      '-b:a', '128k',
-      outputName
-    ] as String);
-
-    Config.mprint('📤 Getting converted video...');
-    final data = await ffmpeg.readFile(outputName);
-    final blob = html.Blob([data], 'video/mp4');
-    final url = html.Url.createObjectUrl(blob);
-
-    Config.mprint('▶️ Initializing player...');
-    final controller = VideoPlayerController.network(url);
-    await controller.initialize();
-    
-    // Cleanup when disposed
-    controller.addListener(() {
-      if (!controller.value.isInitialized) {
-        html.Url.revokeObjectUrl(url);
-      }
-    });
-
-    Config.mprint('✅ Conversion successful');
-    return controller;
-  } catch (e, st) {
-    Config.mprint('❌ Conversion failed, trying fallback: $e\n$st');
-    
-    // Fallback to original video
-    try {
-      final controller = VideoPlayerController.network(videoUrl, httpHeaders: headers);
-      await controller.initialize();
       return controller;
     } catch (e) {
-      throw Exception('All video playback methods failed: ${e.toString()}');
+      throw Exception('Failed to load video: ${e.toString()}');
     }
   }
-}
 
 }

@@ -379,8 +379,8 @@ class VideoCard extends StatelessWidget {
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => VideoPlayerScreen(
-        // videoId: video.id,
+      builder: (context) => VideoPlayerWidget(
+        videoId: video.id,
       ),
     ),
   );

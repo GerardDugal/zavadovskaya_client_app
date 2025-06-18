@@ -161,8 +161,8 @@ class MyApp extends StatelessWidget {
         final videoId = args['videoId'] as int;
         final lessonTitle = args['name']?.toString() ?? 'Без названия';
         return MaterialPageRoute(
-          builder: (_) => VideoPlayerScreen(
-            // videoId: videoId,
+          builder: (_) => VideoPlayerWidget(
+            videoId: videoId,
           ),
         );
 
