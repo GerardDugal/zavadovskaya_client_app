@@ -1,14 +1,12 @@
 pipeline {
     agent {
         docker {
-            image 'cirrusci/flutter:3.10.6'  // Официальный образ Flutter с уже установленными зависимостями
-            args '--platform linux/amd64 -u root -v /usr/bin/chromium:/usr/bin/chromium'  // Монтируем chromium
+            image 'cirrusci/flutter:latest'  // Используем существующий тег
+            args '--platform linux/amd64 -u root -v /usr/bin/chromium:/usr/bin/chromium'
         }
     }
 
     environment {
-        FLUTTER_CHANNEL = 'stable'
-        FLUTTER_VERSION = '3.32.4'
         WEB_BUILD_DIR = 'build/web'
         REMOTE_DIR = '/root/Courses-frontend'
     }
@@ -24,7 +22,7 @@ pipeline {
             steps {
                 sh 'flutter --version'
                 sh 'flutter config --enable-web'
-                sh 'flutter doctor'
+                sh 'flutter doctor -v'
             }
         }
 
@@ -36,9 +34,7 @@ pipeline {
 
         stage('Build Web') {
             steps {
-                sh """
-                flutter build web --release --web-renderer html
-                """
+                sh 'flutter build web --release --web-renderer html'
             }
         }
 
@@ -46,7 +42,7 @@ pipeline {
             steps {
                 script {
                     sh "tar -czf flutter_build.tar.gz -C ${env.WEB_BUILD_DIR} ."
-
+                    
                     writeFile file: 'deploy.sh', text: """#!/bin/bash
 systemctl stop nginx || true
 rm -rf ${env.REMOTE_DIR}/*
