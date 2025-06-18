@@ -5,7 +5,7 @@ pipeline {
         WEB_BUILD_DIR = 'build/web'
         REMOTE_DIR = '/root/Courses-frontend'
         FLUTTER_USER = 'flutteruser'
-        FLUTTER_FLUTTER_BIN = '/home/flutteruser/flutter/bin/flutter'
+        FLUTTER_PASS = 'Gfhjkm007q..'
     }
 
     stages {
@@ -15,31 +15,37 @@ pipeline {
             }
         }
 
+        stage('Fix Permissions') {
+            steps {
+                // даём flutteruser права на рабочую папку Jenkins
+                sh "sudo chown -R ${FLUTTER_USER}:jenkins ${env.WORKSPACE}"
+                sh "sudo chmod -R u+rwX ${env.WORKSPACE}"
+            }
+        }
+
         stage('Get Dependencies and Build') {
             steps {
-                sh """
-                    sudo -u ${FLUTTER_USER} ${FLUTTER_FLUTTER_BIN} pub get
-                    sudo -u ${FLUTTER_USER} ${FLUTTER_FLUTTER_BIN} build web --release --web-renderer html
-                """
+                script {
+                    sh "sudo -u ${FLUTTER_USER} /home/flutteruser/flutter/bin/flutter pub get"
+                    sh "sudo -u ${FLUTTER_USER} /home/flutteruser/flutter/bin/flutter build web --release --web-renderer html"
+                }
             }
         }
 
-        stage('Archive Build') {
+        stage('Prepare Deployment') {
             steps {
-                sh "sudo -u ${FLUTTER_USER} tar -czf flutter_build.tar.gz -C ${WEB_BUILD_DIR} ."
-            }
-        }
+                script {
+                    sh "sudo -u ${FLUTTER_USER} tar -czf flutter_build.tar.gz -C ${WEB_BUILD_DIR} ."
 
-        stage('Prepare Deployment Script') {
-            steps {
-                writeFile file: 'deploy.sh', text: """#!/bin/bash
+                    writeFile file: 'deploy.sh', text: """#!/bin/bash
 systemctl stop nginx || true
 rm -rf ${REMOTE_DIR}/*
 mkdir -p ${REMOTE_DIR}
 tar -xzf flutter_build.tar.gz -C ${REMOTE_DIR}
 systemctl start nginx || true
 """
-                sh 'chmod +x deploy.sh'
+                    sh 'chmod +x deploy.sh'
+                }
             }
         }
 
