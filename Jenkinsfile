@@ -1,31 +1,19 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'cirrusci/flutter:3.10.6'  // Официальный образ Flutter с уже установленными зависимостями
+            args '--platform linux/amd64 -u root -v /usr/bin/chromium:/usr/bin/chromium'  // Монтируем chromium
+        }
+    }
 
     environment {
         FLUTTER_CHANNEL = 'stable'
         FLUTTER_VERSION = '3.32.4'
         WEB_BUILD_DIR = 'build/web'
         REMOTE_DIR = '/root/Courses-frontend'
-        FLUTTER_HOME = "${env.WORKSPACE}/flutter"
     }
 
     stages {
-        stage('Install Dependencies') {
-            steps {
-                sh '''
-                apt-get update -qq
-                apt-get install -y --no-install-recommends \
-                    clang \
-                    cmake \
-                    ninja-build \
-                    pkg-config \
-                    libgtk-3-dev \
-                    chromium-browser
-                '''
-            }
-        }
-
-        // Остальные этапы без изменений
         stage('Checkout') {
             steps {
                 checkout scm
@@ -34,18 +22,9 @@ pipeline {
 
         stage('Setup Flutter') {
             steps {
-                script {
-                    if (!fileExists("${env.FLUTTER_HOME}")) {
-                        sh """
-                        wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${env.FLUTTER_VERSION}-${env.FLUTTER_CHANNEL}.tar.xz
-                        tar xf flutter_linux_${env.FLUTTER_VERSION}-${env.FLUTTER_CHANNEL}.tar.xz
-                        """
-                    }
-                    env.PATH = "${env.FLUTTER_HOME}/bin:${env.PATH}"
-                    sh 'flutter --version'
-                    sh 'flutter config --enable-web'
-                    sh 'flutter doctor'
-                }
+                sh 'flutter --version'
+                sh 'flutter config --enable-web'
+                sh 'flutter doctor'
             }
         }
 
@@ -109,10 +88,7 @@ systemctl start nginx || true
 
         stage('Cleanup') {
             steps {
-                script {
-                    sh 'rm -f flutter_build.tar.gz deploy.sh flutter_linux_*.tar.xz'
-                    sh "rm -rf ${env.FLUTTER_HOME}"
-                }
+                sh 'rm -f flutter_build.tar.gz deploy.sh'
             }
         }
     }
