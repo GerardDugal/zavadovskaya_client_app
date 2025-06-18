@@ -5,7 +5,8 @@ pipeline {
         FLUTTER_CHANNEL = 'stable'
         FLUTTER_VERSION = '3.22.0'
         WEB_BUILD_DIR = 'build/web'
-        REMOTE_DIR = '/root/Courses-frontend'  // Изменено здесь
+        REMOTE_DIR = '/root/Courses-frontend'
+        FLUTTER_HOME = "${env.WORKSPACE}/flutter"  // Изменено здесь
     }
 
     stages {
@@ -18,16 +19,16 @@ pipeline {
         stage('Setup Flutter') {
             steps {
                 script {
-                    if (!fileExists("${env.HOME}/flutter")) {
+                    if (!fileExists("${env.FLUTTER_HOME}")) {
                         sh """
                         wget https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${env.FLUTTER_VERSION}-${env.FLUTTER_CHANNEL}.tar.xz
                         tar xf flutter_linux_${env.FLUTTER_VERSION}-${env.FLUTTER_CHANNEL}.tar.xz
                         """
                     }
-                    withEnv(["PATH+FLUTTER=${env.HOME}/flutter/bin"]) {
-                        sh 'flutter --version'
-                        sh 'flutter doctor'
-                    }
+                    // Добавляем Flutter в PATH
+                    env.PATH = "${env.FLUTTER_HOME}/bin:${env.PATH}"
+                    sh 'flutter --version'
+                    sh 'flutter doctor'
                 }
             }
         }
@@ -101,7 +102,8 @@ systemctl start nginx || true
         stage('Cleanup') {
             steps {
                 script {
-                    sh 'rm -f flutter_build.tar.gz deploy.sh'
+                    sh 'rm -f flutter_build.tar.gz deploy.sh flutter_linux_*.tar.xz'
+                    sh "rm -rf ${env.FLUTTER_HOME}"  // Очищаем Flutter после сборки
                 }
             }
         }
