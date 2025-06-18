@@ -27,7 +27,7 @@ pipeline {
             steps {
                 script {
                     sh "sudo -u ${FLUTTER_USER} /home/flutteruser/flutter/bin/flutter pub get"
-                    sh "sudo -u ${FLUTTER_USER} /home/flutteruser/flutter/bin/flutter build web --release --web-renderer html"
+                    sh "sudo -u ${FLUTTER_USER} /home/flutteruser/flutter/bin/flutter build web --release"
                 }
             }
         }
