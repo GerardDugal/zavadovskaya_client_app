@@ -1,28 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="A new Flutter project.">
 
+  <!-- Критически важные мета-теги для видео -->
+  <meta http-equiv="Content-Security-Policy" content="default-src * blob: data: gap:; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'; media-src * blob: data:;">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="client_application">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
@@ -31,8 +22,72 @@
 
   <title>client_application</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Preload видео кодеки для улучшения производительности -->
+  <link rel="preload" as="script" href="https://unpkg.com/hls.js@latest">
+  <link rel="preload" as="script" href="https://unpkg.com/dashjs@latest/dist/dash.all.min.js">
+
+  <!-- Скрипт для проверки поддержки видеоформатов -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Проверка поддержки форматов браузером
+      const video = document.createElement('video');
+      const canPlayMP4 = video.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+      const canPlayHLS = video.canPlayType('application/vnd.apple.mpegurl');
+      
+      console.log('MP4 support:', canPlayMP4);
+      console.log('HLS support:', canPlayHLS);
+      
+      // Сохраняем информацию о поддержке для Flutter
+      window.browserVideoSupport = {
+        mp4: canPlayMP4,
+        hls: canPlayHLS
+      };
+      
+      // Фикс для авто-воспроизведения в iOS
+      if (/(iPad|iPhone|iPod)/g.test(navigator.userAgent)) {
+        document.addEventListener('gesturestart', function(e) {
+          e.preventDefault();
+        });
+      }
+    });
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
+
+  <!-- Fallback плееры для разных форматов -->
+  <script src="https://unpkg.com/hls.js@latest"></script>
+  <script src="https://unpkg.com/dashjs@latest/dist/dash.all.min.js"></script>
+  
+  <!-- Глобальные обработчики ошибок видео -->
+  <script>
+    window.addEventListener('error', function(e) {
+      if (e.target.tagName === 'VIDEO') {
+        console.error('Video error:', e.target.error);
+        // Передаем ошибку в Flutter
+        if (window.flutterVideoErrorHandler) {
+          window.flutterVideoErrorHandler(e.target.error.message);
+        }
+      }
+    }, true);
+
+    // Функция для проверки CORS
+    window.checkVideoAccess = function(url, callback) {
+      fetch(url, { method: 'HEAD', mode: 'no-cors' })
+        .then(() => callback(true))
+        .catch(() => callback(false));
+    };
+  </script>
+
+  <!-- Полифиллы для старых браузеров -->
+  <script>
+    // Полифилл для HTML5 video
+    if (!HTMLVideoElement.prototype.canPlayType) {
+      HTMLVideoElement.prototype.canPlayType = function(type) {
+        return type.includes('mp4') ? 'probably' : '';
+      };
+    }
+  </script>
 </body>
 </html>

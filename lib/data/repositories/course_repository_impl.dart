@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:video_player/video_player.dart';
@@ -34,8 +35,6 @@ class CourseRepositoryImpl implements CourseRepository {
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
-
-  
 
   /// Получение списка всех курсов.
 @override
@@ -249,28 +248,56 @@ Future<List<Video>> getVideosByCourseId(int courseId) async {
 @override
 Future<VideoPlayerController> getVideoStream(int videoId) async {
   Config.mprint('🔍 [VideoRepository] Получение видео потока для ID: $videoId');
+  
   final headers = await _getHeaders();
   headers['Range'] = 'bytes=0-';
-  final uri = Uri.parse('https://zavadovskayakurs.ru/api/v1/stream/stream/by_id/$videoId');
+  final videoUrl = '$baseUrl/stream/stream/by_id/$videoId'; // Явно указываем .mp4
   
-  Config.mprint('📡 Отправка GET запроса на $uri с заголовками: $headers');
+  Config.mprint('📡 Запрос видео по URL: $videoUrl');
 
   try {
-    // Создаем контроллер для потокового видео
-    final controller = VideoPlayerController.networkUrl(
-  uri,
-  httpHeaders: headers,
-  videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true), // <- важно для Android
-);
+    // Для веба используем простой network controller
+    if (kIsWeb) {
+      Config.mprint('🌐 Используем веб-версию видеоплеера');
+      Config.mprint('ссфлка $baseUrl/stream/stream/by_id/$videoId');
+      Config.mprint('$headers');
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(videoUrl),
+        httpHeaders: headers,
+      );
+      Config.mprint('$controller');
+      await controller.initialize();
+      Config.mprint('✅ Видео успешно инициализировано для веба');
+      return controller;
+    }
 
-    // Инициализируем контроллер
-    await controller.initialize();
-    Config.mprint('✅ [VideoRepository] Видео поток успешно инициализирован');
-    
+    // Для мобильных устройств используем networkUrl с поддержкой потоков
+    Config.mprint('📱 Используем мобильную версию видеоплеера');
+    final controller = VideoPlayerController.networkUrl(
+      Uri.parse(videoUrl),
+      httpHeaders: headers,
+      videoPlayerOptions: VideoPlayerOptions(
+        mixWithOthers: true,
+      ),
+    );
+
+    // Таймаут инициализации (15 секунд)
+    await controller.initialize().timeout(
+      const Duration(seconds: 15),
+      onTimeout: () {
+        controller.dispose();
+        throw TimeoutException('Инициализация видео заняла слишком много времени');
+      },
+    );
+
+    Config.mprint('✅ Видео успешно инициализировано');
     return controller;
-  } on TimeoutException {
-    Config.mprint('⏱ [VideoRepository] Таймаут при получении видео потока');
-    throw Exception('Превышено время ожидания ответа от сервера');
+  } on TimeoutException catch (e) {
+    Config.mprint('⏱ Таймаут при загрузке видео: $e');
+    throw Exception('Превышено время ожидания загрузки видео');
+  } catch (e) {
+    Config.mprint('🚨 ошибка: $e');
+    throw Exception('Произошла ошибка при получении видео');
   }
 }
 }

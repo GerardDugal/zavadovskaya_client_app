@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:zavadovskaya_client_app/blocs/courses_detai/course_detail_bloc.dart';
 import 'package:zavadovskaya_client_app/blocs/password_recovery/password_recovery_bloc.dart';
 import 'package:zavadovskaya_client_app/presentation/screens/passwordRecovery_screen.dart';
@@ -161,8 +162,7 @@ class MyApp extends StatelessWidget {
         final lessonTitle = args['name']?.toString() ?? 'Без названия';
         return MaterialPageRoute(
           builder: (_) => VideoPlayerScreen(
-            videoTitle: lessonTitle,
-            videoId: videoId,
+            // videoId: videoId,
           ),
         );
 
