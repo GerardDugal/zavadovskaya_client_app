@@ -4,6 +4,8 @@ pipeline {
     environment {
         WEB_BUILD_DIR = 'build/web'
         REMOTE_DIR = '/root/Courses-frontend'
+        FLUTTER_USER = 'flutteruser'
+        FLUTTER_FLUTTER_BIN = '/home/flutteruser/flutter/bin/flutter'
     }
 
     stages {
@@ -15,16 +17,16 @@ pipeline {
 
         stage('Get Dependencies and Build') {
             steps {
-                sh '''
-                    sudo -u flutteruser flutter pub get
-                    sudo -u flutteruser flutter build web --release --web-renderer html
-                '''
+                sh """
+                    sudo -u ${FLUTTER_USER} ${FLUTTER_FLUTTER_BIN} pub get
+                    sudo -u ${FLUTTER_USER} ${FLUTTER_FLUTTER_BIN} build web --release --web-renderer html
+                """
             }
         }
 
         stage('Archive Build') {
             steps {
-                sh "tar -czf flutter_build.tar.gz -C ${WEB_BUILD_DIR} ."
+                sh "sudo -u ${FLUTTER_USER} tar -czf flutter_build.tar.gz -C ${WEB_BUILD_DIR} ."
             }
         }
 
