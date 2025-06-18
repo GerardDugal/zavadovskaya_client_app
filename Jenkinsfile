@@ -14,7 +14,7 @@ pipeline {
                 sh 'rm -rf .git'
             }
         }
-        
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -43,6 +43,8 @@ pipeline {
                 script {
                     sh "sudo -u ${FLUTTER_USER} tar -czf flutter_build.tar.gz -C ${WEB_BUILD_DIR} ."
 
+                    sh "sudo chown -R jenkins:jenkins ${env.WORKSPACE}"
+                    
                     writeFile file: 'deploy.sh', text: """#!/bin/bash
 systemctl stop nginx || true
 rm -rf ${REMOTE_DIR}/*
