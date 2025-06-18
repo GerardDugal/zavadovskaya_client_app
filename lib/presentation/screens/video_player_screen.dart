@@ -38,6 +38,18 @@ class VideoPlayerWidget extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Positioned(
+                        top: 50,
+                        left: 16,
+                        child: Material(
+                          color: Colors.black45,
+                          shape: const CircleBorder(),
+                          child: IconButton(
+                            icon: const Icon(Icons.chevron_left, color: Colors.white),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ),
+                      ),
             const Icon(Icons.error_outline, color: Colors.red, size: 50),
             const SizedBox(height: 16),
             Text(

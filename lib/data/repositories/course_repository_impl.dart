@@ -249,7 +249,8 @@ Future<List<Video>> getVideosByCourseId(int courseId) async {
 @override
 Future<VideoPlayerController> getVideoStream(int videoId) async {
     final headers = await _getHeaders();
-    final videoUrl = '$baseUrl/stream/stream/by_id/$videoId';
+    final token = await secureStorage.read(key: 'access_token');
+    final videoUrl = '$baseUrl/stream/web_stream/by_id/$videoId?token=$token';
 
     try {
       final controller = VideoPlayerController.network(
@@ -258,7 +259,7 @@ Future<VideoPlayerController> getVideoStream(int videoId) async {
       );
 
       await controller.initialize().timeout(
-        const Duration(seconds: 15),
+        const Duration(seconds: 30),
         onTimeout: () {
           controller.dispose();
           throw TimeoutException('Video initialization timeout');

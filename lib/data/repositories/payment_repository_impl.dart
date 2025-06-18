@@ -27,25 +27,17 @@ class PaymentRepositoryImpl implements PaymentRepository {
     final response = await http.post(
       Uri.parse('$baseUrl/payment/payment/create/for_course/${paymentRequest.courseID}'),
       headers: headers,
+      body: json.encode({'amount': paymentRequest.amount}),
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      if (data.containsKey('confirmation_url')) {
-        return PaymentResponse(
-          confirmationUrl: data['confirmation_url'],
-        );
-      } else {
-        return PaymentResponse(
-          confirmationUrl:
-              'https://www.example.com/payment_confirmation?status=success',
-        );
-      }
+      return PaymentResponse(
+        confirmationUrl: data['confirmation_url'] ?? '',
+      );
     } else {
-      final error =
-          json.decode(response.body)['message'] ?? 'Ошибка оплаты курса';
+      final error = json.decode(response.body)['message'] ?? 'Ошибка оплаты курса';
       throw Exception(error);
     }
   }
-
 }

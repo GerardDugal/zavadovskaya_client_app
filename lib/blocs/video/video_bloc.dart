@@ -32,13 +32,14 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
       // Initialize ChewieController
       _chewieController = ChewieController(
         videoPlayerController: _videoController!,
-        autoPlay: event.autoPlay,
+        autoPlay: false,
         looping: false,
         allowFullScreen: true,
+        allowedScreenSleep: false,
         showControls: true,
         materialProgressColors: ChewieProgressColors(
-          playedColor: Colors.red,
-          handleColor: Colors.red,
+          playedColor: Colors.purpleAccent,
+          handleColor: Colors.purpleAccent,
           backgroundColor: Colors.grey,
           bufferedColor: Colors.grey.withOpacity(0.5),
         ),
