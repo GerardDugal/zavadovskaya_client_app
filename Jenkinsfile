@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         FLUTTER_CHANNEL = 'stable'
-        FLUTTER_VERSION = '3.32.4'  // Обновлено до версии, которая содержит Dart SDK 3.5.3+
+        FLUTTER_VERSION = '3.32.4'
         WEB_BUILD_DIR = 'build/web'
         REMOTE_DIR = '/root/Courses-frontend'
         FLUTTER_HOME = "${env.WORKSPACE}/flutter"
@@ -13,13 +13,19 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                sudo apt-get update
-                sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
-                sudo apt-get install -y chromium-browser
+                apt-get update -qq
+                apt-get install -y --no-install-recommends \
+                    clang \
+                    cmake \
+                    ninja-build \
+                    pkg-config \
+                    libgtk-3-dev \
+                    chromium-browser
                 '''
             }
         }
 
+        // Остальные этапы без изменений
         stage('Checkout') {
             steps {
                 checkout scm
