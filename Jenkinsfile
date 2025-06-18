@@ -9,6 +9,12 @@ pipeline {
     }
 
     stages {
+        stage('Pre-clean') {
+            steps {
+                sh 'rm -rf .git'
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 checkout scm
