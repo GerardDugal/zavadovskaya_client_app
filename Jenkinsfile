@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image 'cirrusci/flutter:latest'  // Используем существующий тег
+            image 'cirrusci/flutter:beta'  // Используем существующий тег
             args '--platform linux/amd64 -u root -v /usr/bin/chromium:/usr/bin/chromium'
         }
     }
