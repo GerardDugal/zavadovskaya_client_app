@@ -5,7 +5,7 @@ import 'dart:html' as html;
 import '../../blocs/payment/payment_bloc.dart';
 import '../../data/models/payment.dart';
 
-class PaymentScreen extends StatelessWidget {
+class PaymentScreen extends StatefulWidget {
   final int courseID;
   final double coursePrice;
 
@@ -16,9 +16,14 @@ class PaymentScreen extends StatelessWidget {
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    String? confirmationUrl;
+  State<PaymentScreen> createState() => _PaymentScreenState();
+}
 
+class _PaymentScreenState extends State<PaymentScreen> {
+  String? confirmationUrl;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Оплата курса'),
@@ -30,22 +35,20 @@ class PaymentScreen extends StatelessWidget {
               SnackBar(content: Text(state.error)),
             );
           }
-        },
-        builder: (context, state) {
-          if (state is PaymentLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
 
           if (state is PaymentSuccess) {
-            confirmationUrl = state.response.confirmationUrl;
+            setState(() {
+              confirmationUrl = state.response.confirmationUrl;
+            });
           }
-
+        },
+        builder: (context, state) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Цена курса: ${coursePrice.toStringAsFixed(2)} рублей',
+                  'Цена курса: ${widget.coursePrice.toStringAsFixed(2)} рублей',
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 30),
@@ -55,8 +58,8 @@ class PaymentScreen extends StatelessWidget {
                     context.read<PaymentBloc>().add(
                       PayForCourseRequested(
                         paymentRequest: PaymentRequest(
-                          courseID: courseID,
-                          amount: coursePrice,
+                          courseID: widget.courseID,
+                          amount: widget.coursePrice,
                         ),
                       ),
                     );
@@ -71,6 +74,7 @@ class PaymentScreen extends StatelessWidget {
                     icon: const Icon(Icons.open_in_new),
                     label: const Text('Перейти к оплате'),
                     onPressed: () {
+                      // В Safari этот вызов будет воспринят как действие пользователя
                       html.window.open(confirmationUrl!, '_blank');
                     },
                   ),
