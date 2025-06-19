@@ -35,7 +35,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       _imageCache[id] = response.bodyBytes;
       return response.bodyBytes;
     } else {
-      throw Exception('Ошибка загрузки изображения: \${response.statusCode}');
+      throw Exception('Ошибка загрузки изображения: ${response.statusCode}');
     }
   }
 
@@ -64,10 +64,34 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         SnackBar(content: Text(paymentState.error)),
       );
     } else if (paymentState is PaymentSuccess) {
-      // Сохраняем URL, но не открываем
-      setState(() {
-        _paymentUrl = paymentState.response.confirmationUrl;
-      });
+      final url = paymentState.response.confirmationUrl;
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: const Color(0xFF2C2C3E),
+          title: const Text('Оплата курса', style: TextStyle(color: Colors.white)),
+          content: const Text(
+            'Перейти на страницу оплаты?',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Отмена', style: TextStyle(color: Colors.purple)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                html.AnchorElement(href: url)
+                  ..target = '_blank'
+                  ..click();
+              },
+              child: const Text('Перейти', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      );
     }
   },
   builder: (context, paymentState) {
@@ -85,8 +109,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   },
 );
 
+
           } else if (courseState is CourseDetailError) {
-            return Center(child: Text('Ошибка: \${courseState.error}', style: const TextStyle(color: Colors.red)));
+            return Center(child: Text('Ошибка: ${courseState.error}', style: const TextStyle(color: Colors.red)));
           }
           return const SizedBox.shrink();
         },
@@ -105,23 +130,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                   ),
                   onPressed: () {
-                    if (_paymentUrl != null) {
-                      // Открытие окна вручную — работает в Safari
-                      html.AnchorElement(href: _paymentUrl!)
-                        ..target = '_blank'
-                        ..click();
-                      _paymentUrl = null; // очищаем, чтобы не было повторов
-                    } else {
-                      // Старт оплаты, получение ссылки
-                      context.read<PaymentBloc>().add(
-                        PayForCourseRequested(
-                          paymentRequest: PaymentRequest(
-                            courseID: course.id,
-                            amount: course.cost,
-                          ),
+                    context.read<PaymentBloc>().add(
+                      PayForCourseRequested(
+                        paymentRequest: PaymentRequest(
+                          courseID: course.id,
+                          amount: course.cost,
                         ),
-                      );
-                    }
+                      ),
+                    );
                   },
                   child: const Text(
                     'Оплатить курс',
