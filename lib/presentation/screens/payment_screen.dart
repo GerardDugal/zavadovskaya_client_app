@@ -1,8 +1,8 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:html' as html;
+
 import '../../blocs/payment/payment_bloc.dart';
 import '../../data/models/payment.dart';
 
@@ -16,19 +16,25 @@ class PaymentScreen extends StatelessWidget {
     required this.coursePrice,
   }) : super(key: key);
 
- Future<void> _launchPaymentUrl(String url) async {
-  final uri = Uri.parse(url);
-
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(
-      uri,
-      mode: Platform.isIOS
-          ? LaunchMode.externalApplication
-          : LaunchMode.inAppWebView,
-    );
+  Future<void> _launchPaymentUrl(String url, BuildContext context) async {
+    try {
+      if (kIsWeb) {
+        html.window.open(url, '_blank');
+      } else {
+        throw UnsupportedError('Запуск URL работает только в вебе');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка открытия оплаты: ${e.toString()}'),
+          action: SnackBarAction(
+            label: 'Повторить',
+            onPressed: () => _launchPaymentUrl(url, context),
+          ),
+        ),
+      );
+    }
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +45,7 @@ class PaymentScreen extends StatelessWidget {
       body: BlocListener<PaymentBloc, PaymentState>(
         listener: (context, state) {
           if (state is PaymentSuccess) {
-            _launchPaymentUrl(state.response.confirmationUrl);
+            _launchPaymentUrl(state.response.confirmationUrl, context);
           }
           if (state is PaymentFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
