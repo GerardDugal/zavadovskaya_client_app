@@ -15,13 +15,27 @@ class PaymentScreen extends StatelessWidget {
   }) : super(key: key);
 
   Future<void> _launchPaymentUrl(String url) async {
+  try {
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.inAppWebView, // Изменено для Safari
+        webViewConfiguration: const WebViewConfiguration(
+          headers: <String, String>{'Accept': 'text/html'},
+        ),
+      );
+    } else {
+      throw 'Could not launch $url';
+    }
+  } catch (e) {
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl( // Fallback для iOS
         Uri.parse(url),
         mode: LaunchMode.externalApplication,
       );
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {
