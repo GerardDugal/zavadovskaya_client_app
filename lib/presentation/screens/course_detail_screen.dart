@@ -105,24 +105,24 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
                   ),
                   onPressed: () {
-  if (_paymentUrl != null) {
-    // Открытие окна вручную — работает в Safari
-    final anchor = html.AnchorElement(href: _paymentUrl!)
-      ..target = '_blank'
-      ..click();
-    _paymentUrl = null; // очищаем, чтобы не было повторов
-  } else {
-    // Старт оплаты, получение ссылки
-    context.read<PaymentBloc>().add(
-      PayForCourseRequested(
-        paymentRequest: PaymentRequest(
-          courseID: course.id,
-          amount: course.cost,
-        ),
-      ),
-    );
-  }
-},
+                    if (_paymentUrl != null) {
+                      // Открытие окна вручную — работает в Safari
+                      html.AnchorElement(href: _paymentUrl!)
+                        ..target = '_blank'
+                        ..click();
+                      _paymentUrl = null; // очищаем, чтобы не было повторов
+                    } else {
+                      // Старт оплаты, получение ссылки
+                      context.read<PaymentBloc>().add(
+                        PayForCourseRequested(
+                          paymentRequest: PaymentRequest(
+                            courseID: course.id,
+                            amount: course.cost,
+                          ),
+                        ),
+                      );
+                    }
+                  },
                   child: const Text(
                     'Оплатить курс',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
