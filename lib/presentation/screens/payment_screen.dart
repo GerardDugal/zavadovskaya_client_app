@@ -26,7 +26,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Оплата курса'),
+        title: const Text('Оплата'),
       ),
       body: BlocConsumer<PaymentBloc, PaymentState>(
         listener: (context, state) {
