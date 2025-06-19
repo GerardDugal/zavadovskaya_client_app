@@ -27,7 +27,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   Future<Uint8List> _getImageBytes(int id) async {
     if (_imageCache.containsKey(id)) return _imageCache[id]!;
 
-    final uri = Uri.parse('https://zavadovskayakurs.ru/api/v1/courses/courses/photo/by_course_id/\$id');
+    final uri = Uri.parse('https://zavadovskayakurs.ru/api/v1/courses/courses/photo/by_course_id/$id');
     final response = await http.get(uri, headers: {"accept": "application/json"}).timeout(const Duration(seconds: 10));
 
     if (response.statusCode == 200) {
