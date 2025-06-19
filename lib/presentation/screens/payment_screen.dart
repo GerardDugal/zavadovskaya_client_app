@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -14,28 +16,19 @@ class PaymentScreen extends StatelessWidget {
     required this.coursePrice,
   }) : super(key: key);
 
-  Future<void> _launchPaymentUrl(String url) async {
-  try {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.inAppWebView, // Изменено для Safari
-        webViewConfiguration: const WebViewConfiguration(
-          headers: <String, String>{'Accept': 'text/html'},
-        ),
-      );
-    } else {
-      throw 'Could not launch $url';
-    }
-  } catch (e) {
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl( // Fallback для iOS
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      );
-    }
+ Future<void> _launchPaymentUrl(String url) async {
+  final uri = Uri.parse(url);
+
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(
+      uri,
+      mode: Platform.isIOS
+          ? LaunchMode.externalApplication
+          : LaunchMode.inAppWebView,
+    );
   }
 }
+
 
   @override
   Widget build(BuildContext context) {
