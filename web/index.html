@@ -6,100 +6,93 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="Оплата курсов через приложение">
+  <meta name="description" content="A new Flutter project.">
 
-  <!-- Объединенная CSP политика с настройками для ЮКассы -->
-  <meta http-equiv="Content-Security-Policy" content="
-    default-src 'self' https://*.yookassa.ru;
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.yookassa.ru https://unpkg.com;
-    style-src 'self' 'unsafe-inline' https://*.yookassa.ru;
-    img-src 'self' data: blob: https:;
-    connect-src 'self' https://*.yookassa.ru https://your-api-domain.com;
-    frame-src 'self' https://*.yookassa.ru;
-    media-src 'self' blob: data: https:;
-  ">
-
-  <!-- iOS специфичные настройки -->
+  <!-- Критически важные мета-теги для видео -->
+  <meta http-equiv="Content-Security-Policy" content="default-src * blob: data: gap:; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'; media-src * blob: data:;">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-title" content="client_application">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.0/dist/ffmpeg.min.js"></script>
+  <script src="https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js"></script>
+
   <title>client_application</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Скрипт инициализации Flutter с обработкой ошибок -->
-  <script>
-    window.addEventListener('load', function(ev) {
-      // Совместимость с Safari
-      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-      
-      if (isSafari) {
-        // Дополнительные настройки для Safari
-        document.cookie = "sameSite=None; Secure";
-      }
+  <!-- Preload видео кодеки для улучшения производительности -->
+  <link rel="preload" as="script" href="https://unpkg.com/hls.js@latest">
+  <link rel="preload" as="script" href="https://unpkg.com/dashjs@latest/dist/dash.all.min.js">
 
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerUrl: 'flutter_service_worker.js?v=' + Date.now()
-        }
-      }).then(function(engineInitializer) {
-        return engineInitializer.initializeEngine({
-          renderer: "canvaskit",
-          canvasKitBaseUrl: "https://unpkg.com/canvaskit-wasm@0.39.0/bin/",
+  <!-- Скрипт для проверки поддержки видеоформатов -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Проверка поддержки форматов браузером
+      const video = document.createElement('video');
+      const canPlayMP4 = video.canPlayType('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+      const canPlayHLS = video.canPlayType('application/vnd.apple.mpegurl');
+      
+      console.log('MP4 support:', canPlayMP4);
+      console.log('HLS support:', canPlayHLS);
+      
+      // Сохраняем информацию о поддержке для Flutter
+      window.browserVideoSupport = {
+        mp4: canPlayMP4,
+        hls: canPlayHLS
+      };
+      
+      // Фикс для авто-воспроизведения в iOS
+      if (/(iPad|iPhone|iPod)/g.test(navigator.userAgent)) {
+        document.addEventListener('gesturestart', function(e) {
+          e.preventDefault();
         });
-      }).then(function(appRunner) {
-        return appRunner.runApp();
-      }).catch(function(error) {
-        console.error('Flutter initialization failed:', error);
-        document.body.innerHTML = `
-          <div style="padding:20px;text-align:center;">
-            <h2>Ошибка загрузки приложения</h2>
-            <p>Пожалуйста, обновите страницу или попробуйте позже.</p>
-            <button onclick="window.location.reload()" style="
-              padding: 8px 16px;
-              background: #0175C2;
-              color: white;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-            ">Обновить</button>
-          </div>
-        `;
-      });
+      }
     });
   </script>
 </head>
 <body>
-  <script src="flutter.js" defer></script>
+  <script src="flutter_bootstrap.js" async></script>
 
-  <!-- Скрипт для обработки платежей в Safari -->
+  <!-- Fallback плееры для разных форматов -->
+  <script src="https://unpkg.com/hls.js@latest"></script>
+  <script src="https://unpkg.com/dashjs@latest/dist/dash.all.min.js"></script>
+  
+  <!-- Глобальные обработчики ошибок видео -->
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Глобальный обработчик для платежей
-      window.handlePayment = function(url) {
-        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-          // Особый обработчик для iOS
-          const popup = window.open(url, '_blank');
-          if (!popup || popup.closed) {
-            window.location.href = url;
-          }
-        } else {
-          window.open(url, '_blank');
+    window.addEventListener('error', function(e) {
+      if (e.target.tagName === 'VIDEO') {
+        console.error('Video error:', e.target.error);
+        // Передаем ошибку в Flutter
+        if (window.flutterVideoErrorHandler) {
+          window.flutterVideoErrorHandler(e.target.error.message);
         }
-      };
-    });
+      }
+    }, true);
+
+    // Функция для проверки CORS
+    window.checkVideoAccess = function(url, callback) {
+      fetch(url, { method: 'HEAD', mode: 'no-cors' })
+        .then(() => callback(true))
+        .catch(() => callback(false));
+    };
   </script>
 
-  <!-- Fallback для старых браузеров -->
-  <noscript>
-    <div style="padding: 20px; text-align: center;">
-      <h2>Требуется JavaScript</h2>
-      <p>Для работы приложения необходимо включить JavaScript в настройках браузера.</p>
-    </div>
-  </noscript>
+  <!-- Полифиллы для старых браузеров -->
+  <script>
+    // Полифилл для HTML5 video
+    if (!HTMLVideoElement.prototype.canPlayType) {
+      HTMLVideoElement.prototype.canPlayType = function(type) {
+        return type.includes('mp4') ? 'probably' : '';
+      };
+    }
+  </script>
 </body>
 </html>
