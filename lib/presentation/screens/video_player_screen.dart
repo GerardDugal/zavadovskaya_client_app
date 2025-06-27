@@ -39,17 +39,17 @@ class VideoPlayerWidget extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Positioned(
-                        top: 50,
-                        left: 16,
-                        child: Material(
-                          color: Colors.black45,
-                          shape: const CircleBorder(),
-                          child: IconButton(
-                            icon: const Icon(Icons.chevron_left, color: Colors.white),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ),
-                      ),
+              top: 50,
+              left: 16,
+              child: Material(
+                color: Colors.purple, // Фиолетовый цвет
+                shape: const CircleBorder(),
+                child: IconButton(
+                  icon: const Icon(Icons.chevron_left, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
             const Icon(Icons.error_outline, color: Colors.red, size: 50),
             const SizedBox(height: 16),
             Text(
@@ -69,20 +69,36 @@ class VideoPlayerWidget extends StatelessWidget {
     }
 
     if (state is VideoReady) {
-      return Column(
+      return Stack(
         children: [
-          Expanded(
-            child: Chewie(controller: state.chewieController!),
+          Column(
+            children: [
+              Expanded(
+                child: Chewie(controller: state.chewieController!),
+              ),
+              if (!state.hasAudio!)
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  color: Colors.amber,
+                  child: const Text(
+                    'Видео не содержит звуковой дорожки',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
           ),
-          if (!state.hasAudio!)
-            Container(
-              padding: const EdgeInsets.all(8),
-              color: Colors.amber,
-              child: const Text(
-                'Видео не содержит звуковой дорожки',
-                textAlign: TextAlign.center,
+          Positioned(
+            top: 50,
+            left: 16,
+            child: Material(
+              color: Colors.purple, // Фиолетовый цвет вместо полупрозрачного
+              shape: const CircleBorder(),
+              child: IconButton(
+                icon: const Icon(Icons.chevron_left, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
               ),
             ),
+          ),
         ],
       );
     }

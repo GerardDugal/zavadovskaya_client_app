@@ -162,11 +162,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
             future: _getImageBytes(course.id),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Container(height: 130, width: double.infinity, color: Colors.grey[800], child: const Center(child: CircularProgressIndicator()));
+                return Container(height: 200, width: double.infinity, color: Colors.grey[800], child: const Center(child: CircularProgressIndicator()));
               } else if (snapshot.hasError || !snapshot.hasData) {
-                return Container(height: 130, width: double.infinity, color: Colors.grey[800], child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey));
+                return Container(height: 200, width: double.infinity, color: Colors.grey[800], child: const Icon(Icons.image_not_supported, size: 50, color: Colors.grey));
               } else {
-                return Image.memory(snapshot.data!, height: 130, width: double.infinity, fit: BoxFit.cover);
+                return Image.memory(snapshot.data!, height: 200, width: double.infinity, fit: BoxFit.cover);
               }
             },
           ),
