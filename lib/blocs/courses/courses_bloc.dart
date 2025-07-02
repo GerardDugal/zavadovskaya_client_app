@@ -4,7 +4,6 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:zavadovskaya_client_app/data/models/category.dart';
 import '../../data/models/course.dart';
-import '../../data/models/course_content.dart';
 import '../../data/repositories/course_repository.dart';
 
 part 'courses_event.dart';
@@ -31,7 +30,8 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
   try {
     final courses = await courseRepository.getAllCourses();
     final categories = await courseRepository.getAllCategories();
-    emit(CoursesLoaded(courses: courses, categories: categories));
+    final isTokend = await courseRepository.checktoken(1);
+    emit(CoursesLoaded(courses: courses, categories: categories, isTokend: isTokend));
   } catch (e) {
     emit(CoursesError(error: e.toString()));
   }
@@ -77,7 +77,6 @@ class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
       emit(PaymentError('Ошибка при проверке статуса оплаты'));
     }
   }
-
 }
 
   // Future<void> _onCreateCourseRequested(

@@ -12,6 +12,7 @@ abstract class CourseRepository {
   Future<Course> getCourseByID(int courseID);
   Future<List<Category>> getAllCategories();
   Future<bool> checkCoursePayment(int id);
+   Future<int> checktoken(int id);
   Future<List<Video>> getVideosByCourseId(int courseId);
   Future<VideoPlayerController> getVideoStream(int videoId);
 

@@ -74,7 +74,7 @@ class VideoPlayerWidget extends StatelessWidget {
     if (state is VideoReady) {
   final chewieController = state.chewieController!;
   final hasAudio = state.hasAudio ?? true;
-
+  
   return WillPopScope(
     onWillPop: () async {
       if (chewieController.isFullScreen) {

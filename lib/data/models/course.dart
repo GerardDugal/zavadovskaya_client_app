@@ -1,6 +1,4 @@
-import 'dart:convert';
 import 'package:equatable/equatable.dart';
-import 'package:zavadovskaya_client_app/data/models/course_content.dart';
 
 class Course extends Equatable {
   final int id;
@@ -40,6 +38,7 @@ class Course extends Equatable {
     double? cost,
     int? categoryId,
     bool? isPaid,
+    int? isTokend
   }) {
     return Course(
       id: id ?? this.id,

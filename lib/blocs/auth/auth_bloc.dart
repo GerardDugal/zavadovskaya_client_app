@@ -3,7 +3,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:zavadovskaya_client_app/config.dart';
-import 'package:zavadovskaya_client_app/presentation/screens/passwordRecovery_screen.dart';
 import '../../data/models/user.dart';
 import '../../data/repositories/auth_repository.dart';
 

@@ -142,8 +142,39 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   _categoryKeys[key] = GlobalKey();
                 }
               }
-
-              return Column(
+              return state.isTokend == 1 ? Center(
+                    child: TweenAnimationBuilder(
+                      duration: Duration(milliseconds: 500),
+                      tween: Tween<double>(begin: 0, end: 1),
+                      builder: (BuildContext context, double value, Widget? child) {
+                        return Opacity(
+                          opacity: value,
+                          child: Transform.scale(
+                            scale: value,
+                            child: Card(
+                              elevation: 8,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Padding(
+                                padding: EdgeInsets.all(25),
+                                child: Text(
+                                  "Ваша сессия истекла,\nпожалуйста выполните повторный вход",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ) : Column(
                 children: [
                   // Container(
                   //   height: 65,

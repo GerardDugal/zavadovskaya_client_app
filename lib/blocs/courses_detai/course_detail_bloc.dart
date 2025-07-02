@@ -1,6 +1,5 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:zavadovskaya_client_app/blocs/courses/courses_bloc.dart';
 import 'package:zavadovskaya_client_app/data/models/video.dart';
 import '../../data/models/course.dart';
 import '../../data/repositories/course_repository.dart';
@@ -50,16 +49,16 @@ class CourseDetailBloc extends Bloc<CourseDetailEvent, CourseDetailState> {
     }
   }
 
-  Future<void> _onGetVideosByCourseId(
-    GetVideosByCourseId event,
-    Emitter<CourseDetailState> emit,
-  ) async {
-    emit(CourseDetailLoading());
-    try {
-      final videos = await courseRepository.getVideosByCourseId(event.courseId);
-      emit(VideosLoaded(videos));
-    } catch (e) {
-      emit(CourseDetailError(error: e.toString()));
-    }
-  }
+  // Future<void> _onGetVideosByCourseId(
+  //   GetVideosByCourseId event,
+  //   Emitter<CourseDetailState> emit,
+  // ) async {
+  //   emit(CourseDetailLoading());
+  //   try {
+  //     final videos = await courseRepository.getVideosByCourseId(event.courseId);
+  //     emit(VideosLoaded(videos));
+  //   } catch (e) {
+  //     emit(CourseDetailError(error: e.toString()));
+  //   }
+  // }
 }

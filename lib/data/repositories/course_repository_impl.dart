@@ -150,7 +150,6 @@ Future<bool> checkCoursePayment(int courseId) async {
       Config.mprint('✅ Курс оплачен');
       return true;
     }
-    
     // Все остальные статусы - оплата не подтверждена
     Config.mprint('❌ Статус оплаты не подтвержден');
     return false;
@@ -164,6 +163,36 @@ Future<bool> checkCoursePayment(int courseId) async {
   } catch (e) {
     Config.mprint('🚨 Неожиданная ошибка: $e');
     return false;
+  }
+}
+
+//потом подправить
+@override
+Future<int> checktoken(int courseId) async {
+  final headers = await _getHeaders();
+  final uri = Uri.parse('$baseUrl/payment/payment/status/by_course_id/$courseId');
+  
+  Config.mprint('🔍 Проверка статуса токена');
+  Config.mprint('📡 Отправка GET запроса на $uri');
+
+  try {
+    final response = await http.get(
+      uri,
+      headers: headers,
+    ).timeout(const Duration(seconds: 10));
+
+    Config.mprint('📬 Получен ответ с кодом: ${response.statusCode}');
+    Config.mprint('📄 Тело ответа: ${response.body}');
+    if (response.statusCode == 401) {
+      Config.mprint('Время вашей сессии истекло, пожалуйста войдите в аккаунт снова!');
+      return 1;
+    }
+    Config.mprint('❌ Статус оплаты не подтвержден');
+    return 0;
+    
+  } on TimeoutException {
+    Config.mprint('⏱ Таймаут при проверке статуса токена');
+    return 0;
   }
 }
 

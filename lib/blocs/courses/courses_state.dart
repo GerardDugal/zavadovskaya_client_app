@@ -17,8 +17,9 @@ class CoursesLoaded extends CoursesState {
   final List<Course> courses;
   final List<Category> categories;
   final Map<String, List<Course>> groupedCourses;
+  final int isTokend;
 
-  CoursesLoaded({required this.courses, required this.categories})
+  CoursesLoaded({required this.courses, required this.categories, required this.isTokend})
       : groupedCourses = _groupCoursesByCategory(courses, categories);
 
   @override
@@ -85,6 +86,7 @@ class PaymentChecked extends CoursesState {
 
   PaymentChecked(this.isPaid);
 }
+
 
 class PaymentError extends CoursesState {
   final String message;
