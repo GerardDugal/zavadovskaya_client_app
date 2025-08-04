@@ -156,18 +156,25 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                     _buildTextField(
                       controller: emailController,
-                      hint: 'Email или номер телефона',
+                      hint: isLogin ? 'Email или номер телефона' : 'Email',
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Введите email или номер телефона';
-                        
-                        // Проверка на email
+                        if (v == null || v.isEmpty) {
+                          return isLogin ? 'Введите email или номер телефона' : 'Введите email';
+                        }
+                    
                         final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                        // Проверка на российский номер телефона (+7XXXXXXXXXX, 8XXXXXXXXXX, 7XXXXXXXXXX)
-                        final phoneRegex = RegExp(r'^(\+7|7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$');
-                        
-                        if (!emailRegex.hasMatch(v) && !phoneRegex.hasMatch(v)) {
-                          return 'Неверный формат email или номера телефона';
+                        if (isLogin) {
+                          // Логин: допускаем email или телефон
+                          final phoneRegex = RegExp(r'^(\+7|7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$');
+                          if (!emailRegex.hasMatch(v) && !phoneRegex.hasMatch(v)) {
+                            return 'Неверный формат email или номера телефона';
+                          }
+                        } else {
+                          // Регистрация: только email
+                          if (!emailRegex.hasMatch(v)) {
+                            return 'Неверный формат email';
+                          }
                         }
                         return null;
                       },
